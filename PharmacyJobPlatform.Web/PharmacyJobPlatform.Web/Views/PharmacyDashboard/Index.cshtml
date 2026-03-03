@@ -1,0 +1,139 @@
+﻿@using PharmacyJobPlatform.Domain.Enums
+@{
+    ViewData["Title"] = "Eczane Paneli";
+    var recentPosts = ViewBag.RecentPosts as List<PharmacyJobPlatform.Domain.Entities.JobPost>;
+    var recentApps = ViewBag.RecentApplications as List<PharmacyJobPlatform.Domain.Entities.JobApplication>;
+}
+
+<div class="container mt-4">
+
+    <h3 class="mb-4">
+        <i class="bi bi-hospital me-2"></i>Eczane Paneli
+    </h3>
+
+    <!-- 🔹 STAT CARDS -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card shadow-sm text-center">
+                <div class="card-body">
+                    <h6>Toplam İlan</h6>
+                    <h2 class="fw-bold">@ViewBag.TotalPosts</h2>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow-sm text-center">
+                <div class="card-body">
+                    <h6>Aktif İlan</h6>
+                    <h2 class="fw-bold text-success">@ViewBag.ActivePosts</h2>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow-sm text-center">
+                <div class="card-body">
+                    <h6>Toplam Başvuru</h6>
+                    <h2 class="fw-bold">@ViewBag.TotalApplications</h2>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow-sm text-center">
+                <div class="card-body">
+                    <h6>Bekleyen</h6>
+                    <h2 class="fw-bold text-warning">@ViewBag.PendingApplications</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🔹 QUICK ACTIONS -->
+    <div class="mb-4">
+        <a asp-controller="JobPosts" asp-action="Create" class="btn btn-primary me-2">
+            <i class="bi bi-plus-circle me-2"></i>Yeni İlan Oluştur
+        </a>
+
+        <a asp-controller="JobPosts" asp-action="MyPosts" class="btn btn-outline-secondary">
+            <i class="bi bi-card-list me-2"></i>İlanlarım
+        </a>
+    </div>
+
+    <div class="row">
+
+        <!-- 🔹 RECENT POSTS -->
+        <div class="col-md-6">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header fw-bold">
+                    <i class="bi bi-card-list me-2"></i>Son İlanlar
+                </div>
+                <ul class="list-group list-group-flush">
+                    @if (recentPosts?.Any() == true)
+                    {
+                        foreach (var post in recentPosts)
+                        {
+                            <li class="list-group-item d-flex justify-content-between">
+                                <span>@post.Title</span>
+                                <small class="text-muted">
+                                    @post.CreatedAt.ToString("dd.MM.yyyy")
+                                </small>
+                            </li>
+                        }
+                    }
+                    else
+                    {
+                        <li class="list-group-item text-muted text-center">
+                            Henüz ilan yok
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
+
+        <!-- 🔹 RECENT APPLICATIONS -->
+        <div class="col-md-6">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header fw-bold">
+                    <i class="bi bi-inbox-arrow-down me-2"></i>Son Başvurular
+                </div>
+                <ul class="list-group list-group-flush">
+                    @if (recentApps?.Any() == true)
+                    {
+                        foreach (var app in recentApps)
+                        {
+                            <li class="list-group-item">
+                                <strong>@app.JobPost.Title</strong><br />
+                                <small class="text-muted">
+                                    @app.AppliedAt.ToString("dd.MM.yyyy")
+                                    —
+                                    @if (app.Status == ApplicationStatus.Pending)
+                                    {
+                                        <span class="text-warning">Beklemede</span>
+                                    }
+                                    else if (app.Status == ApplicationStatus.Accepted)
+                                    {
+                                        <span class="text-success">Kabul</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-danger">Red</span>
+                                    }
+                                </small>
+                            </li>
+                        }
+                    }
+                    else
+                    {
+                        <li class="list-group-item text-muted text-center">
+                            Başvuru yok
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
+
+    </div>
+
+</div>

@@ -1,0 +1,84 @@
+# ------------------------------
+# Build artifacts
+# ------------------------------
+[Bb]in/
+[Oo]bj/
+out/
+publish/
+artifacts/
+TestResults/
+
+# ------------------------------
+# IDE / editor
+# ------------------------------
+.vs/
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# ------------------------------
+# OS files
+# ------------------------------
+.DS_Store
+Thumbs.db
+
+# ------------------------------
+# Logs / temp
+# ------------------------------
+*.log
+*.tmp
+*.temp
+*.cache
+*.pid
+
+# ------------------------------
+# NuGet
+# ------------------------------
+*.nupkg
+*.snupkg
+packages/
+*.nuget.props
+*.nuget.targets
+
+# ------------------------------
+# Front-end dependencies and generated assets
+# ------------------------------
+node_modules/
+wwwroot/dist/
+wwwroot/build/
+
+# ------------------------------
+# Test / coverage outputs
+# ------------------------------
+coverage/
+coverage.*
+*.coverage
+*.coveragexml
+
+# ------------------------------
+# Local settings / secrets
+# ------------------------------
+appsettings.json
+appsettings.Development.json
+appsettings.*.local.json
+*.env
+.env
+.env.*
+secrets.json
+
+# Azure / publish profiles (may include credentials)
+**/Properties/PublishProfiles/*.pubxml
+**/Properties/ServiceDependencies/**/*.json
+
+# Certificates/keys
+*.pfx
+*.p12
+*.key
+*.pem
+
+# Keep sample configs tracked
+!**/appsettings.Example.json
+!**/appsettings.Sample.json

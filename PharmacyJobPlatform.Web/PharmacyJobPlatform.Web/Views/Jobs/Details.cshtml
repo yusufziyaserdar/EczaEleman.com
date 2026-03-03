@@ -1,0 +1,126 @@
+﻿@model JobPostDetailsViewModel
+@using PharmacyJobPlatform.Domain.Enums
+
+<div class="container mt-4">
+    <div class="card shadow-sm">
+        <div class="card-body">
+
+            <h3>@Model.Title</h3>
+
+
+            @if(Model.JobType==JobType.Permanent)
+            {
+                <span class="badge bg-success">
+                        Kalıcı
+                </span>
+            }
+            else
+            {
+                <span class="badge bg-warning">
+                    Günlük
+                </span>
+            }
+
+
+            <hr />
+
+            <p>@Model.Description</p>
+
+            <p>
+                <strong>Adres:</strong><br />
+                @Model.City / @Model.District<br />
+                @Model.Neighborhood
+            </p>
+
+            @if (Model.JobType == JobType.Daily)
+            {
+                <p><strong>Günlük Ücret:</strong> @Model.DailyWage ₺</p>
+                <p><strong>Tarih:</strong> @Model.WorkDate?.ToString("dd.MM.yyyy")</p>
+            }
+            else
+            {
+                <p><strong>Aylık Maaş:</strong> @Model.MonthlySalary ₺</p>
+            }
+
+            <div class="d-flex justify-content-between align-items-center mt-4">
+                <a asp-action="Index" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left me-2"></i>Geri
+                </a>
+
+                @if (User.IsInRole("Admin"))
+                {
+                    <form asp-action="DeleteByAdmin" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.Id" />
+                        <button class="btn btn-outline-danger">İlanı Kaldır</button>
+                    </form>
+                }
+                else
+                {
+                    <div class="d-flex flex-column align-items-end gap-2">
+                        @if (Model.AlreadyApplied)
+                        {
+                            <span class="badge bg-secondary">Başvuruldu</span>
+                        }
+                        else
+                        {
+                            <form asp-action="Apply" method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="jobPostId" value="@Model.Id" />
+                                <button class="btn btn-success">Başvur</button>
+                            </form>
+                        }
+
+                        <div class="dropdown w-100">
+                            <button class="btn btn-outline-secondary btn-sm w-100"
+                                    type="button"
+                                    data-bs-toggle="dropdown"
+                                    aria-expanded="false"
+                                    aria-label="İlan seçenekleri">
+                                <i class="bi bi-three-dots"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end w-100">
+                                <li>
+                                    <button type="button"
+                                            class="dropdown-item text-danger"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#reportJobModal">
+                                        Rapor Et
+                                    </button>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="reportJobModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content">
+            <form asp-controller="Reports" asp-action="Create" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="entityType" value="JobPost" />
+                <input type="hidden" name="entityId" value="@Model.Id" />
+                <input type="hidden" name="returnController" value="Jobs" />
+                <input type="hidden" name="returnAction" value="Details" />
+                <input type="hidden" name="returnId" value="@Model.Id" />
+
+                <div class="modal-header">
+                    <h5 class="modal-title">İlanı Rapor Et</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+                </div>
+                <div class="modal-body">
+                    <label class="form-label">Rapor nedeni</label>
+                    <textarea class="form-control" name="reason" maxlength="500" rows="4" required></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Vazgeç</button>
+                    <button type="submit" class="btn btn-danger btn-sm">Gönder</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

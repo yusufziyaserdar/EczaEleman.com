@@ -1,0 +1,92 @@
+﻿@model PharmacyJobPlatform.Web.Models.ViewModels.WorkerDashboardViewModel
+
+<div class="container mt-4">
+    <h2 class="fw-bold mb-4"><i class="bi bi-person-circle me-2"></i>Worker Dashboard</h2>
+
+    <!-- Stat cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card shadow-sm text-center">
+                <div class="card-body">
+                    <small class="text-muted">Başvurularım</small>
+                    <h3>@Model.TotalApplications</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card shadow-sm text-center">
+                <div class="card-body">
+                    <small class="text-muted">Aktif Sohbetler</small>
+                    <h3>@Model.ActiveChats</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card shadow-sm text-center">
+                <div class="card-body">
+                    <small class="text-muted">Okunmamış Mesaj</small>
+                    <h3>@Model.UnreadMessages</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Son başvurular -->
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header fw-bold"><i class="bi bi-receipt me-2"></i>Son Başvurular</div>
+                <ul class="list-group list-group-flush">
+                    @foreach (var a in Model.RecentApplications)
+                    {
+                        <li class="list-group-item d-flex justify-content-between">
+                            <div>
+                                <strong>@a.JobTitle</strong><br />
+                                <small class="text-muted">@a.CompanyName</small>
+                            </div>
+                            @if(a.Status == "Accepted")
+                            {
+                                <span class="badge bg-primary">@a.Status</span>
+                            }
+                            
+                            @if (a.Status == "Pending")
+                            {
+                                <span class="badge bg-secondary">@a.Status</span>
+                            }
+                            @if (a.Status == "Rejected")
+                            {
+                                <span class="badge bg-danger">@a.Status</span>
+
+                            }
+                            
+                            
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
+
+        <!-- Son sohbetler -->
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-header fw-bold"><i class="bi bi-chat-dots me-2"></i>Son Sohbetler</div>
+                <ul class="list-group list-group-flush">
+                    @foreach (var c in Model.RecentConversations)
+                    {
+                        <li class="list-group-item">
+                            <a href="/Messages/Chat/@c.ConversationId"
+                               class="text-decoration-none fw-bold">
+                                @c.OtherUserName
+                            </a>
+                            <div class="small text-muted">
+                                @c.LastMessage
+                            </div>
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,34 @@
+﻿@model PharmacyJobPlatform.Domain.Entities.Conversation
+@using System.Security.Claims
+
+@{
+    int userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+    var otherUser = Model.User1Id == userId ? Model.User2 : Model.User1;
+}
+
+<div class="widget-chat-body">
+    <div class="widget-chat-header d-flex align-items-center gap-2">
+        <button class="btn btn-sm btn-outline-primary" onclick="loadConversations()">
+            <i class="bi bi-arrow-left"></i>
+        </button>
+
+        <a href="/Profile/@otherUser.Id" class="fw-bold text-decoration-none chat-user-link">
+            @otherUser.FirstName @otherUser.LastName
+        </a>
+    </div>
+
+    <div id="widgetMessagesInner">
+        @foreach (var msg in Model.Messages.Where(m => m.SenderId == userId ? !m.DeletedBySender : !m.DeletedByReceiver).OrderBy(m => m.SentAt))
+        {
+            bool mine = msg.SenderId == userId;
+            <div class="chat-bubble-row @(mine ? "mine" : "")">
+                <span class="chat-bubble @(mine ? "mine" : "")">@(msg.IsRecalled ? "Bu mesaj geri alındı." : msg.Content)</span>
+            </div>
+        }
+    </div>
+
+    <form class="widget-chat-form" onsubmit="sendWidgetMessage(event, @Model.Id)">
+        <input id="widgetMessageInput" class="form-control" placeholder="Mesajını yaz..." required />
+        <button class="btn btn-primary w-100 widget-send-btn">Gönder</button>
+    </form>
+</div>
