@@ -1,0 +1,135 @@
+﻿@model PharmacyJobPlatform.Domain.Entities.Conversation
+@using System.Security.Claims
+
+@{
+    int userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+
+    var otherUser =
+        Model.User1Id == userId ? Model.User2 : Model.User1;
+}
+
+
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+
+        <div class="card">
+            <div class="card-header fw-bold">
+                <i class="bi bi-chat-dots me-2"></i>
+                <a asp-controller="Profile"
+                   asp-action="Index"
+                   asp-route-id="@otherUser.Id"
+                   class="text-decoration-none">
+                    @otherUser.FirstName @otherUser.LastName
+                </a>
+            </div>
+
+
+            <div class="card-body" id="chatBody" style="height:400px; overflow-y:auto">
+                <div id="chatMessages">
+                    @await Html.PartialAsync("_ChatBodyMessages", Model)
+                </div>
+            </div>
+
+            <div class="card-footer">
+                <form id="chatSendForm" asp-action="SendMessage">
+                    <input type="hidden" name="conversationId" value="@Model.Id" />
+
+                    <div class="input-group">
+                        <input id="chatMessageInput" name="content" class="form-control" required />
+                        <button class="btn btn-primary" type="submit">Gönder</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    </div>
+</div>
+@section Scripts {
+    <script>
+        const chatBody = document.getElementById("chatBody");
+        const chatMessages = document.getElementById("chatMessages");
+        const conversationId = @Model.Id;
+
+        function scrollChatToBottom() {
+            if (chatBody) {
+                chatBody.scrollTop = chatBody.scrollHeight;
+            }
+        }
+
+        async function refreshChatMessages(forceScrollToBottom = false) {
+            const response = await fetch(`/Messages/ChatMessages?conversationId=${conversationId}`);
+            if (response.ok && chatMessages) {
+                chatMessages.innerHTML = await response.text();
+                if (forceScrollToBottom) {
+                    scrollChatToBottom();
+                }
+            }
+        }
+
+        window.refreshChatMessages = refreshChatMessages;
+        window.currentConversationId = conversationId;
+
+
+        async function deleteMessage(messageId, conversationId) {
+            const payload = new URLSearchParams();
+            payload.set("messageId", messageId);
+
+            const response = await fetch("/Messages/DeleteMessage", {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: payload.toString()
+            });
+
+            if (response.ok) {
+                refreshChatMessages(true);
+            }
+        }
+
+        async function recallMessage(messageId, conversationId) {
+            const payload = new URLSearchParams();
+            payload.set("messageId", messageId);
+
+            const response = await fetch("/Messages/RecallMessage", {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: payload.toString()
+            });
+
+            if (response.ok) {
+                refreshChatMessages(true);
+            }
+        }
+
+        window.deleteMessage = deleteMessage;
+        window.recallMessage = recallMessage;
+
+        const chatForm = document.getElementById("chatSendForm");
+        const chatInput = document.getElementById("chatMessageInput");
+
+        if (chatForm) {
+            chatForm.addEventListener("submit", async (event) => {
+                event.preventDefault();
+                if (!chatInput || !chatInput.value.trim()) {
+                    return;
+                }
+
+                const payload = new URLSearchParams();
+                payload.set("conversationId", conversationId);
+                payload.set("content", chatInput.value);
+
+                const response = await fetch("/Messages/SendMessageAjax", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    body: payload.toString()
+                });
+
+                if (response.ok) {
+                    chatInput.value = "";
+                    refreshChatMessages(true);
+                }
+            });
+        }
+
+        refreshChatMessages(true);
+    </script>
+}

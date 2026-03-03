@@ -1,0 +1,499 @@
+﻿@model PharmacyJobPlatform.Web.Models.Profile.ProfileEditViewModel
+@using PharmacyJobPlatform.Web.Models.Profile
+
+@{
+    var googleMapsApiKey = ViewData["GoogleMapsApiKey"] as string;
+    var isPharmacyOwner = (ViewData["IsPharmacyOwner"] as bool? ?? false) || User.IsInRole("PharmacyOwner");
+    var addressParts = new List<string>();
+    if (!string.IsNullOrWhiteSpace(Model.Address?.Street))
+    {
+        addressParts.Add(Model.Address.Street);
+    }
+
+    if (!string.IsNullOrWhiteSpace(Model.Address?.BuildingNumber))
+    {
+        addressParts.Add(Model.Address.BuildingNumber);
+    }
+
+    if (!string.IsNullOrWhiteSpace(Model.Address?.Neighborhood))
+    {
+        addressParts.Add(Model.Address.Neighborhood);
+    }
+
+    if (!string.IsNullOrWhiteSpace(Model.Address?.District))
+    {
+        addressParts.Add(Model.Address.District);
+    }
+
+    if (!string.IsNullOrWhiteSpace(Model.Address?.City))
+    {
+        addressParts.Add(Model.Address.City);
+    }
+
+    var addressSummary = string.Join(", ", addressParts);
+    var pharmacyPrograms = TechnicalInfoConstants.PharmacyPrograms;
+}
+
+<form asp-action="Edit" method="post" enctype="multipart/form-data">
+
+    <input type="hidden" asp-for="Id" />
+
+    <div class="mb-3">
+        <label>Ad</label>
+        <input asp-for="FirstName" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label>Soyad</label>
+        <input asp-for="LastName" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label>Telefon</label>
+        <input asp-for="PhoneNumber" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label d-block">İletişim Bilgisi Görünürlüğü</label>
+        <div class="form-check mb-2">
+            <input asp-for="IsEmailVisible" class="form-check-input" />
+            <label asp-for="IsEmailVisible" class="form-check-label">Email profilimde görünsün</label>
+        </div>
+        <div class="form-check mb-2">
+            <input asp-for="IsPhoneNumberVisible" class="form-check-input" />
+            <label asp-for="IsPhoneNumberVisible" class="form-check-label">Telefon profilimde görünsün</label>
+        </div>
+        <div class="form-check">
+            <input asp-for="IsCvVisible" class="form-check-input" />
+            <label asp-for="IsCvVisible" class="form-check-label">CV profilimde görünsün</label>
+        </div>
+    </div>
+
+    <div class="mb-3">
+        <label>Hakkında</label>
+        <textarea asp-for="About" class="form-control"></textarea>
+    </div>
+
+    <div class="mb-3">
+        <label>Profil Fotoğrafı</label>
+        <input asp-for="ProfileImage" type="file" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label>CV</label>
+        <input asp-for="CvFile" type="file" class="form-control" />
+        @if (!string.IsNullOrWhiteSpace(Model.ExistingCvFilePath))
+        {
+            <small class="text-muted d-block mt-1">Mevcut CV dosyası yüklü.</small>
+        }
+    </div>
+
+    @if (isPharmacyOwner)
+    {
+        <hr />
+        <div class="address-card">
+            <div class="address-card__header">
+                <div>
+                    <h5 class="mb-1"><i class="fa-solid fa-location-dot"></i> Eczane Adresi</h5>
+                    <p class="text-muted mb-0">Adres yazmaya başlayın, alanlar otomatik dolsun.</p>
+                </div>
+                <span class="badge text-bg-light">Google Places</span>
+            </div>
+
+            <div class="mt-3">
+                <label asp-for="PharmacyName" class="form-label">Eczane Adı</label>
+                <input asp-for="PharmacyName" class="form-control" />
+            </div>
+
+            <div class="address-card__search">
+                <label for="addressAutocomplete" class="form-label">Adres Ara</label>
+                <div class="address-input">
+                    <span class="address-input__icon"><i class="fa-solid fa-magnifying-glass"></i></span>
+                    <input id="addressAutocomplete"
+                           type="text"
+                           class="form-control address-input__control"
+                           placeholder="Örn: Bağdat Cad. No:1 Kadıköy"
+                           autocomplete="off"
+                           value="@addressSummary" />
+                </div>
+                <small class="text-muted">Sonuçlardan birini seçtiğinizde şehir, ilçe ve mahalle otomatik alınır.</small>
+            </div>
+
+            <div class="row g-3 mt-2">
+                <div class="col-md-4">
+                    <label class="form-label">Şehir</label>
+                    <input asp-for="Address.City" id="cityInput" class="form-control" readonly />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">İlçe</label>
+                    <input asp-for="Address.District" id="districtInput" class="form-control" readonly />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Mahalle</label>
+                    <input asp-for="Address.Neighborhood" id="neighborhoodInput" class="form-control" readonly />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Sokak / Cadde</label>
+                    <input asp-for="Address.Street" id="streetInput" class="form-control" placeholder="Örn: Bağdat Caddesi" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Bina No</label>
+                    <input asp-for="Address.BuildingNumber" id="buildingNumberInput" class="form-control" placeholder="Örn: 24A" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Adres Notu</label>
+                    <input asp-for="Address.Description" class="form-control" placeholder="Kat, daire vb." />
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (!isPharmacyOwner)
+    {
+    <hr />
+    <h5><i class="bi bi-hospital me-2"></i>Çalışma Geçmişi</h5>
+
+    <div id="experience-list">
+
+        @for (int i = 0; i < Model.WorkExperiences.Count; i++)
+        {
+            <div class="card mb-3 experience-item">
+                <div class="card-body">
+
+                    <input type="hidden"
+                           name="WorkExperiences[@i].Id"
+                           value="@Model.WorkExperiences[i].Id" />
+
+                    <div class="mb-2">
+                        <label>Eczane Adı</label>
+                        <input class="form-control"
+                               name="WorkExperiences[@i].PharmacyName"
+                               value="@Model.WorkExperiences[i].PharmacyName" />
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label>Başlangıç</label>
+                            <input type="date"
+                                   class="form-control"
+                                   name="WorkExperiences[@i].StartDate"
+                                   value="@Model.WorkExperiences[i].StartDate.ToString("yyyy-MM-dd")" />
+                        </div>
+
+                        <div class="col-md-6">
+                            <label>Bitiş</label>
+                            <input type="date"
+                                   class="form-control"
+                                   name="WorkExperiences[@i].EndDate"
+                                   value="@(Model.WorkExperiences[i].EndDate?.ToString("yyyy-MM-dd"))" />
+                        </div>
+                    </div>
+
+                    <button type="button"
+                            class="btn btn-sm btn-danger mt-3 remove-experience">
+                        <i class="bi bi-trash me-2"></i>Sil
+                    </button>
+
+                </div>
+            </div>
+        }
+
+    </div>
+
+    <button type="button"
+            id="add-experience"
+            class="btn btn-outline-secondary mb-3">
+        <i class="bi bi-plus-circle me-2"></i>Tecrübe Ekle
+    </button>
+
+
+    }
+
+
+    @if (!isPharmacyOwner)
+    {
+        <hr />
+        <div class="technical-info-card">
+            <h5><i class="fa-solid fa-flask-vial"></i> Teknik Bilgiler</h5>
+            <p class="text-muted small">1 = Hiç bilmiyorum, 5 = Tamamen hakimim</p>
+
+            <div class="mb-3">
+                <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap mb-2">
+                    <label class="form-label mb-0">Kullanabildiği Eczane Programı</label>
+                    <div class="program-picker-toolbar">
+                        <span class="program-selection-count" id="programSelectionCountEdit">0 seçili</span>
+                        <button type="button" class="btn btn-link btn-sm p-0" id="clearProgramsEdit">Seçimi Temizle</button>
+                    </div>
+                </div>
+                <div class="program-picker" role="group" aria-label="Kullanabildiği Eczane Programı">
+                    @foreach (var program in pharmacyPrograms)
+                    {
+                        var isSelected = Model.PharmacyPrograms.Contains(program);
+                        <label class="program-chip @(isSelected ? "selected" : string.Empty)">
+                            <input type="checkbox"
+                                   name="PharmacyPrograms"
+                                   value="@program"
+                                   @(isSelected ? "checked" : string.Empty)
+                                   class="program-chip__input" />
+                            <span class="program-chip__label">@program</span>
+                            <span class="program-chip__check"><i class="bi bi-check-lg"></i></span>
+                        </label>
+                    }
+                </div>
+                <small class="text-muted">Program kutularına tıklayarak kolayca birden fazla seçim yapabilirsiniz.</small>
+            </div>
+
+            @await Html.PartialAsync("_TechnicalRatingInput", ("DrugKnowledgeLevel", "İlaç Bilgisi", Model.DrugKnowledgeLevel))
+            @await Html.PartialAsync("_TechnicalRatingInput", ("DermocosmeticKnowledgeLevel", "Dermokozmetik Ürün Bilgisi", Model.DermocosmeticKnowledgeLevel))
+            @await Html.PartialAsync("_TechnicalRatingInput", ("CrossSellingSkillLevel", "Çapraz Satış Yetkinliği", Model.CrossSellingSkillLevel))
+            @await Html.PartialAsync("_TechnicalRatingInput", ("PrescriptionPreparationLevel", "Reçete Düzeltme / Sıralama / Ay Sonuna Hazırlık", Model.PrescriptionPreparationLevel))
+            @await Html.PartialAsync("_TechnicalRatingInput", ("ReportControlLevel", "Rapor Kontrol Edebilme", Model.ReportControlLevel))
+            @await Html.PartialAsync("_TechnicalRatingInput", ("PrescriptionControlLevel", "Reçete Kontrol Edebilme", Model.PrescriptionControlLevel))
+            @await Html.PartialAsync("_TechnicalRatingInput", ("SutKnowledgeLevel", "SUT(Sağlık Uygulama Tebliği)'a Hakimiyet", Model.SutKnowledgeLevel))
+        </div>
+    }
+
+    <button class="btn btn-success">Kaydet</button>
+</form>
+
+<style>
+.technical-info-card { border: 1px solid #dce6f8; border-radius: 12px; padding: 16px; background: #f7faff; margin-bottom: 1rem; }
+.tech-stars { display:flex; gap:6px; }
+.tech-star { border:none; background:transparent; color:#bfd3f5; font-size:1.25rem; padding:0; }
+.tech-star.active { color:#2f7be5; }
+.program-picker { display:grid; grid-template-columns: repeat(auto-fit,minmax(180px,1fr)); gap:10px; }
+.program-picker-toolbar { display:flex; align-items:center; gap:12px; }
+.program-selection-count { font-size:.85rem; color:#4f6488; background:#edf3ff; border-radius:999px; padding:2px 10px; }
+.program-chip { border:1px solid #d0dff8; border-radius:10px; padding:10px 12px; display:flex; align-items:center; justify-content:space-between; cursor:pointer; background:#fff; transition:all .2s ease; }
+.program-chip__input { display:none; }
+.program-chip__label { font-weight:500; color:#35507a; }
+.program-chip__check { color:transparent; }
+.program-chip.selected { background:#e9f2ff; border-color:#5b8fe8; box-shadow:0 0 0 1px rgba(91,143,232,.15); }
+.program-chip.selected .program-chip__label { color:#1c4ca0; }
+.program-chip.selected .program-chip__check { color:#1c7c54; }
+</style>
+
+@section Scripts {
+    <script>
+            let experienceIndex = @Model.WorkExperiences.Count;
+            const addExperienceButton = document.getElementById("add-experience");
+
+            if (addExperienceButton) {
+                addExperienceButton.addEventListener("click", function () {
+
+                    const container = document.getElementById("experience-list");
+
+                    const html = `
+        <div class="card mb-3 experience-item">
+            <div class="card-body">
+
+                <div class="mb-2">
+                    <label>Eczane Adı</label>
+                    <input class="form-control"
+                           name="WorkExperiences[${experienceIndex}].PharmacyName" />
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <label>Başlangıç</label>
+                        <input type="date"
+                               class="form-control"
+                               name="WorkExperiences[${experienceIndex}].StartDate" />
+                    </div>
+
+                    <div class="col-md-6">
+                        <label>Bitiş</label>
+                        <input type="date"
+                               class="form-control"
+                               name="WorkExperiences[${experienceIndex}].EndDate" />
+                    </div>
+                </div>
+
+                <button type="button"
+                        class="btn btn-sm btn-danger mt-3 remove-experience">
+                    <i class="bi bi-trash me-2"></i>Sil
+                </button>
+
+            </div>
+        </div>`;
+
+                    container.insertAdjacentHTML("beforeend", html);
+                    experienceIndex++;
+                });
+            }
+
+            document.addEventListener("click", function (e) {
+                if (e.target.classList.contains("remove-experience")) {
+                    e.target.closest(".experience-item").remove();
+                    if (document.getElementById("experience-list")) {
+                        reindexExperiences();
+                    }
+                }
+            });
+
+            function reindexExperiences() {
+                const items = document.querySelectorAll(".experience-item");
+
+                items.forEach((item, index) => {
+                    item.querySelectorAll("input").forEach(input => {
+                        input.name = input.name.replace(/\[\d+\]/, `[${index}]`);
+                    });
+                });
+
+                experienceIndex = items.length;
+            }
+
+            const setupProgramPicker = (inputSelector, clearButtonId, countLabelId) => {
+                const inputs = Array.from(document.querySelectorAll(inputSelector));
+                const clearButton = document.getElementById(clearButtonId);
+                const countLabel = document.getElementById(countLabelId);
+
+                if (!inputs.length) {
+                    clearButton?.classList.add("d-none");
+                    return;
+                }
+
+                const updateState = () => {
+                    const selectedCount = inputs.filter(input => input.checked).length;
+                    if (countLabel) {
+                        countLabel.textContent = `${selectedCount} seçili`;
+                    }
+                };
+
+                inputs.forEach(input => {
+                    input.addEventListener("change", () => {
+                        input.closest(".program-chip")?.classList.toggle("selected", input.checked);
+                        updateState();
+                    });
+                });
+
+                clearButton?.addEventListener("click", () => {
+                    inputs.forEach(input => {
+                        input.checked = false;
+                        input.closest(".program-chip")?.classList.remove("selected");
+                    });
+                    updateState();
+                });
+
+                updateState();
+            };
+            setupProgramPicker('.program-chip__input[name="PharmacyPrograms"]', 'clearProgramsEdit', 'programSelectionCountEdit');
+
+            const setupTechnicalStars = () => {
+                document.querySelectorAll(".technical-rating").forEach(container => {
+                    const hidden = container.querySelector("input[type='hidden']");
+                    const buttons = Array.from(container.querySelectorAll(".tech-star"));
+                    let selected = Number(hidden?.value || 0);
+                    const paint = (count) => buttons.forEach((b, i) => b.classList.toggle("active", i < count));
+                    paint(selected);
+                    buttons.forEach(btn => {
+                        btn.addEventListener("mouseenter", () => paint(Number(btn.dataset.value)));
+                        btn.addEventListener("click", () => {
+                            selected = Number(btn.dataset.value);
+                            if (hidden) hidden.value = String(selected);
+                            paint(selected);
+                        });
+                    });
+                    container.addEventListener("mouseleave", () => paint(selected));
+                });
+            };
+            setupTechnicalStars();
+
+            const fillAddressInput = (input, value) => {
+                if (!input) return;
+                input.value = value ?? "";
+            };
+
+            const clearAddressInputs = () => {
+                fillAddressInput(document.getElementById("cityInput"), "");
+                fillAddressInput(document.getElementById("districtInput"), "");
+                fillAddressInput(document.getElementById("neighborhoodInput"), "");
+                fillAddressInput(document.getElementById("streetInput"), "");
+                fillAddressInput(document.getElementById("buildingNumberInput"), "");
+            };
+
+            const getComponent = (components, types) => {
+                const component = components.find(c => types.some(t => c.types.includes(t)));
+                return component?.long_name ?? "";
+            };
+
+            const initAddressAutocomplete = () => {
+                const addressInput = document.getElementById("addressAutocomplete");
+                if (!addressInput || !window.google?.maps?.places?.Autocomplete) {
+                    console.warn("Google Maps Places Autocomplete yüklenemedi. API anahtarını ve referer izinlerini kontrol edin.");
+                    return;
+                }
+
+                const autocomplete = new google.maps.places.Autocomplete(addressInput, {
+                    types: ["address"],
+                    componentRestrictions: { country: "tr" },
+                    fields: ["address_components", "formatted_address"]
+                });
+
+                autocomplete.addListener("place_changed", () => {
+                    const place = autocomplete.getPlace();
+                    if (!place?.address_components) {
+                        return;
+                    }
+
+                    if (place.formatted_address) {
+                        addressInput.value = place.formatted_address;
+                    }
+
+                    const components = place.address_components;
+                    const city = getComponent(components, ["administrative_area_level_1"]);
+                    const district = getComponent(components, ["administrative_area_level_2"]);
+                    const neighborhood = getComponent(components, [
+                        "sublocality_level_1",
+                        "neighborhood",
+                        "administrative_area_level_3",
+                        "administrative_area_level_4"
+                    ]);
+                    const street = getComponent(components, ["route"]);
+                    const buildingNumber = getComponent(components, ["street_number"]);
+
+                    fillAddressInput(document.getElementById("cityInput"), city);
+                    fillAddressInput(document.getElementById("districtInput"), district);
+                    fillAddressInput(document.getElementById("neighborhoodInput"), neighborhood);
+
+                    const streetInput = document.getElementById("streetInput");
+                    const buildingInput = document.getElementById("buildingNumberInput");
+
+                    if (streetInput && !streetInput.value) {
+                        streetInput.value = street;
+                    }
+
+                    if (buildingInput && !buildingInput.value) {
+                        buildingInput.value = buildingNumber;
+                    }
+                });
+
+                addressInput.addEventListener("input", () => {
+                    if (!addressInput.value) {
+                        clearAddressInputs();
+                    }
+                });
+            };
+
+            window.initAddressAutocomplete = initAddressAutocomplete;
+            window.gm_authFailure = () => {
+                console.warn("Google Maps API doğrulaması başarısız oldu. API anahtarının referer izinlerini kontrol edin.");
+            };
+    </script>
+
+    @if (isPharmacyOwner)
+    {
+        if (!string.IsNullOrWhiteSpace(googleMapsApiKey))
+        {
+            <script src="https://maps.googleapis.com/maps/api/js?key=@googleMapsApiKey&libraries=places&callback=initAddressAutocomplete&loading=async"
+                    async
+                    defer></script>
+        }
+        else
+        {
+            <script>
+                console.warn("Google Maps API anahtarı bulunamadı. Adres otomatik tamamlama çalışmayacak.");
+            </script>
+        }
+    }
+}

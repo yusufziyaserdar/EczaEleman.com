@@ -1,0 +1,629 @@
+﻿@model PharmacyJobPlatform.Web.Models.Profile.ProfileDetailViewModel
+@using System.Security.Claims
+
+
+@{
+    var user = Model.User;
+    string profileImage = string.IsNullOrEmpty(user.ProfileImagePath)
+        ? "/images/profiles/default-profile.png"
+        : user.ProfileImagePath;
+
+    int totalMonths = 0;
+
+    if (user.WorkExperiences != null)
+    {
+        foreach (var exp in user.WorkExperiences)
+        {
+            var endDate = exp.EndDate ?? DateTime.Today;
+            totalMonths += (endDate.Year - exp.StartDate.Year) * 12
+                           + endDate.Month - exp.StartDate.Month;
+        }
+    }
+
+    int years = totalMonths / 12;
+    int months = totalMonths % 12;
+    var currentUserId = User.Identity?.IsAuthenticated == true
+        ? User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+        : null;
+
+    var pharmacyPrograms = string.IsNullOrWhiteSpace(user.PharmacyPrograms)
+        ? new List<string>()
+        : user.PharmacyPrograms.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
+
+    var technicalItems = new List<(string Label, int? Value)>
+    {
+        ("İlaç Bilgisi", user.DrugKnowledgeLevel),
+        ("Dermokozmetik Ürün Bilgisi", user.DermocosmeticKnowledgeLevel),
+        ("Çapraz Satış Yetkinliği", user.CrossSellingSkillLevel),
+        ("Reçete Düzeltme / Sıralama / Ay Sonu Hazırlık", user.PrescriptionPreparationLevel),
+        ("Rapor Kontrol Edebilme", user.ReportControlLevel),
+        ("Reçete Kontrol Edebilme", user.PrescriptionControlLevel),
+        ("SUT'a Hakimiyet", user.SutKnowledgeLevel)
+    };
+
+}
+
+@section Styles {
+    <style>
+        .rating-stars {
+            display: inline-flex;
+            gap: 0.15rem;
+        }
+
+        .rating-star {
+            border: none;
+            background: transparent;
+            padding: 0;
+            color: #cfd4da;
+            font-size: 1.75rem;
+            line-height: 1;
+            cursor: pointer;
+        }
+
+        .rating-star.is-active {
+            color: #ffc107;
+        }
+
+
+        .tech-display-stars { display:inline-flex; gap:4px; }
+        .tech-display-stars i { color:#bfd3f5; }
+        .tech-display-stars i.active { color:#2f7be5; }
+
+        .comments-section {
+            background: linear-gradient(145deg, #f8fbff 0%, #eef4ff 100%);
+            border: 1px solid #dce8ff;
+            border-radius: 1rem;
+            padding: 1.25rem;
+        }
+
+        .comment-card,
+        .reply-card {
+            background: #fff;
+            border: 1px solid #e6ebf5;
+            border-radius: 0.9rem;
+            padding: 1rem;
+        }
+
+        .reply-list {
+            border-left: 3px solid #e2e8f6;
+            margin-left: 1rem;
+            padding-left: 1rem;
+        }
+
+        .comment-meta {
+            color: #7a8799;
+            font-size: 0.9rem;
+        }
+
+        .comment-author {
+            font-weight: 600;
+            color: #253347;
+        }
+
+        .comment-text {
+            white-space: pre-line;
+        }
+
+        .reply-form {
+            display: none;
+        }
+
+        .reply-form.show {
+            display: block;
+        }
+
+        .profile-main-column {
+            min-height: 210px;
+            padding-right: 3.25rem;
+            padding-bottom: 3.25rem;
+        }
+
+        .profile-report-dropdown {
+            position: absolute;
+            top: 0;
+            right: 0;
+        }
+
+        .profile-admin-remove-form {
+            position: absolute;
+            right: 0;
+            bottom: 0;
+            margin: 0;
+        }
+
+        .comment-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-shrink: 0;
+        }
+
+        .reply-tools {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+        }
+
+        .reply-children {
+            border-left: 2px dashed #d6e0f5;
+            margin-top: 0.75rem;
+            margin-left: 0.5rem;
+            padding-left: 0.9rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+    </style>
+}
+
+<div class="container mt-4">
+    @if (TempData["Success"] is string successMessage)
+    {
+        <div class="alert alert-success">@successMessage</div>
+    }
+
+    @if (TempData["Error"] is string errorMessage)
+    {
+        <div class="alert alert-danger">@errorMessage</div>
+    }
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+
+            <!-- PROFIL ÜST -->
+            <div class="row align-items-center">
+                <div class="col-md-3 text-center">
+                    <img src="@profileImage"
+                         class="rounded-circle img-fluid mb-3"
+                         style="max-width:150px;"
+                         alt="Profil Fotoğrafı" />
+                </div>
+
+                <div class="col-md-9 position-relative profile-main-column">
+                    <h3 class="mb-1">
+                        @user.FirstName @user.LastName
+                    </h3>
+
+                    @if(user.Role.Name=="PharmacyOwner")
+                    {
+                        <span class="badge bg-secondary mb-2">
+                            Eczane Sahibi
+                        </span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-secondary mb-2">
+                            Çalışan
+                        </span>
+                    }
+
+                    @if (user.IsEmailVisible)
+                    {
+                        <p class="mb-1">
+                            <i class="bi bi-envelope me-2"></i>@user.Email
+                        </p>
+                    }
+
+                    @if (user.IsPhoneNumberVisible && !string.IsNullOrEmpty(user.PhoneNumber))
+                    {
+                        <p class="mb-1">
+                            <i class="bi bi-telephone me-2"></i>@user.PhoneNumber
+                        </p>
+                    }
+
+                    <p class="text-muted">
+                        Platforma katılma:
+                        @user.CreatedAt.ToShortDateString()
+                    </p>
+
+                    @if (User.Identity?.IsAuthenticated == true &&
+                    int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value) == user.Id)
+                    {
+                        <div class="d-flex gap-2 flex-wrap mb-2">
+                            <a asp-controller="Profile"
+                               asp-action="Edit"
+                               class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-pencil me-2"></i>Profili Düzenle
+                            </a>
+
+                            @if (!string.IsNullOrEmpty(user.CvFilePath))
+                            {
+                                <a asp-controller="Profile"
+                                   asp-action="DownloadCv"
+                                   asp-route-id="@user.Id"
+                                   class="btn btn-outline-secondary btn-sm">
+                                    <i class="bi bi-file-earmark-arrow-down me-2"></i>CV'mi Gör / İndir
+                                </a>
+                            }
+                        </div>
+                    }
+                    @if (User.IsInRole("Admin") && user.Role.Name != "Admin")
+                    {
+                        <form asp-controller="Profile"
+                              asp-action="DeleteUser"
+                              method="post"
+                              class="profile-admin-remove-form">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@user.Id" />
+                            <button type="submit" class="btn btn-outline-danger btn-sm">
+                                <i class="bi bi-trash me-2"></i>Profili Kaldır
+                            </button>
+                        </form>
+                    }
+
+
+                    <!-- MESAJ -->
+                    @if (User.Identity?.IsAuthenticated == true && user.Id != int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value))
+                    {
+                        if (Model.ConversationId.HasValue)
+                        {
+                            <div class="d-flex gap-2 flex-wrap">
+                                @if ((user.IsCvVisible || currentUserId == user.Id.ToString()) && !string.IsNullOrEmpty(user.CvFilePath))
+                                {
+                                    <a asp-controller="Profile"
+                                       asp-action="DownloadCv"
+                                       asp-route-id="@user.Id"
+                                       class="btn btn-outline-secondary">
+                                        <i class="bi bi-file-earmark-arrow-down me-2"></i>CV İndir
+                                    </a>
+                                }
+
+                                <a asp-controller="Messages"
+                                   asp-action="Chat"
+                                   asp-route-id="@Model.ConversationId.Value"
+                                   class="btn btn-primary">
+                                    <i class="bi bi-chat-dots me-2"></i>Mesajlaşmaya Git
+                                </a>
+                            </div>
+                        }
+                        else if (Model.IncomingRequestId.HasValue)
+                        {
+                            <form asp-controller="Messages"
+                                  asp-action="AcceptRequest"
+                                  asp-route-requestId="@Model.IncomingRequestId.Value"
+                                  method="post"
+                                  class="d-inline">
+                                <button type="submit" class="btn btn-success">
+                                    <i class="bi bi-check-circle me-2"></i>Mesaj İsteğini Kabul Et
+                                </button>
+                            </form>
+                        }
+                        else if (Model.HasPendingOutgoingRequest)
+                        {
+                            <button class="btn btn-outline-secondary" disabled>
+                                <i class="bi bi-hourglass-split me-2"></i>Mesaj İsteği Gönderildi
+                            </button>
+                        }
+                        else if (Model.CanSendRequest)
+                        {
+                            <form asp-controller="Messages"
+                                  asp-action="Start"
+                                  asp-route-userId="@user.Id"
+                                  method="post"
+                                  class="d-inline">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-chat-dots me-2"></i>Mesaj İsteği Gönder
+                                </button>
+                            </form>
+                        }
+
+                        <div class="dropdown profile-report-dropdown">
+                            <button class="btn btn-outline-secondary btn-sm"
+                                    type="button"
+                                    data-bs-toggle="dropdown"
+                                    aria-expanded="false"
+                                    aria-label="Profil seçenekleri">
+                                <i class="bi bi-three-dots"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li>
+                                    <button type="button"
+                                            class="dropdown-item text-danger"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#reportUserModal">
+                                        Rapor Et
+                                    </button>
+                                </li>
+                            </ul>
+                        </div>
+                    }
+
+                </div>
+            </div>
+
+            <hr />
+
+            <!-- ABOUT -->
+            @if (!string.IsNullOrEmpty(user.About))
+            {
+                <h5><i class="bi bi-card-text me-2"></i>Hakkında</h5>
+                <p>@user.About</p>
+                <hr />
+            }
+
+            <!-- WORK EXPERIENCE -->
+            @if (user.Role.Name == "Worker" && user.WorkExperiences?.Any() == true)
+            {
+                <h5><i class="bi bi-hospital me-2"></i>Çalışma Geçmişi</h5>
+
+                <ul class="list-group mb-3">
+                    @foreach (var exp in user.WorkExperiences.OrderByDescending(x => x.StartDate))
+                    {
+                        <li class="list-group-item">
+                            <strong>@exp.PharmacyName</strong><br />
+                            <small class="text-muted">
+                                @exp.StartDate.ToString("MM/yyyy")
+                                -
+                                @(exp.EndDate.HasValue
+                                    ? exp.EndDate.Value.ToString("MM/yyyy")
+                                    : "Devam ediyor")
+                            </small>
+                        </li>
+                    }
+                </ul>
+
+                <p class="fw-bold">
+                    <i class="bi bi-stopwatch me-2"></i>Toplam Deneyim:
+                    @if (years > 0)
+                    {
+                        @($"{years} yıl ")
+                    }
+                    @if (months > 0)
+                    {
+                        @($"{months} ay")
+                    }
+                </p>
+
+                <hr />
+            }
+
+
+            @if (user.Role.Name == "Worker" && (pharmacyPrograms.Any() || technicalItems.Any(x => x.Value.HasValue)))
+            {
+                <h5><i class="bi bi-clipboard2-pulse me-2"></i>Teknik Bilgiler</h5>
+
+                @if (pharmacyPrograms.Any())
+                {
+                    <div class="mb-3">
+                        <div class="fw-semibold mb-1">Kullanabildiği Eczane Programları</div>
+                        <div class="d-flex flex-wrap gap-2">
+                            @foreach (var program in pharmacyPrograms)
+                            {
+                                <span class="badge rounded-pill text-bg-light border">@program</span>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <ul class="list-group mb-3">
+                    @foreach (var item in technicalItems)
+                    {
+                        if (!item.Value.HasValue)
+                        {
+                            continue;
+                        }
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>@item.Label</span>
+                            <span class="tech-display-stars">
+                                @for (int i = 1; i <= 5; i++)
+                                {
+                                    <i class="bi bi-star-fill @(i <= item.Value.Value ? "active" : string.Empty)"></i>
+                                }
+                            </span>
+                        </li>
+                    }
+                </ul>
+                <hr />
+            }
+
+            <h5><i class="bi bi-star-fill me-2 text-warning"></i>Değerlendirme</h5>
+
+            @if (Model.AverageRating.HasValue)
+            {
+                <p class="mb-2">
+                    <strong>@Model.AverageRating.Value.ToString("0.0") / 5</strong>
+                    <span class="text-muted">(@Model.RatingCount değerlendirme)</span>
+                </p>
+            }
+            else
+            {
+                <p class="text-muted mb-2">Henüz değerlendirme yapılmamış.</p>
+            }
+
+
+            @if (Model.CanRateUser)
+            {
+                <form asp-controller="Profile"
+                      asp-action="Rate"
+                      method="post"
+                      class="row g-2 align-items-center mb-2"
+                      id="ratingForm">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="ratedUserId" value="@user.Id" />
+                    <input type="hidden" id="stars" name="stars" value="@(Model.ExistingRating ?? 0)" />
+
+                    <div class="col-auto">
+                        <label class="col-form-label">Puanınız:</label>
+                    </div>
+                    <div class="col-auto">
+                        <div class="rating-stars" id="ratingStars" data-selected="@(Model.ExistingRating ?? 0)">
+                            @for (int i = 1; i <= 5; i++)
+                            {
+                                <button type="button"
+                                        class="rating-star"
+                                        data-value="@i"
+                                        aria-label="@i yıldız ver">
+                                    <i class="bi bi-star-fill"></i>
+                                </button>
+                            }
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <button type="submit" class="btn btn-warning btn-sm" id="ratingSubmitButton">
+                            <i class="bi bi-star me-1"></i>
+                            @(Model.ExistingRating.HasValue ? "Puanı Güncelle" : "Puan Ver")
+                        </button>
+                    </div>
+                </form>
+                <p class="small text-muted">Sadece birlikte çalıştığınız kullanıcıları değerlendirebilirsiniz.</p>
+            }
+
+            <hr />
+
+
+
+            <section class="comments-section mb-4">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+                    <h5 class="mb-0">
+                        <i class="bi bi-chat-square-quote me-2 text-primary"></i>Profil Yorumları
+                    </h5>
+                    <span class="badge bg-light text-dark border">@Model.Comments.Count yorum</span>
+                </div>
+
+                @if (User.Identity?.IsAuthenticated == true)
+                {
+                    <form asp-controller="Profile" asp-action="Comment" method="post" class="comment-card mb-3">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="profileUserId" value="@user.Id" />
+                        <div class="mb-2">
+                            <label class="form-label fw-semibold">Yorumunuz</label>
+                            <textarea name="content" class="form-control" rows="3" maxlength="500" placeholder="Profil hakkında düşüncelerinizi paylaşın..." required></textarea>
+                        </div>
+                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                            <div class="form-check m-0">
+                                <input class="form-check-input" type="checkbox" name="isAnonymous" id="newCommentAnonymous" value="true" />
+                                <label class="form-check-label" for="newCommentAnonymous">Anonim paylaş</label>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-sm">
+                                <i class="bi bi-send me-1"></i>Yorumu Paylaş
+                            </button>
+                        </div>
+                    </form>
+                }
+                else
+                {
+                    <div class="alert alert-info mb-3">
+                        Yorum yapabilmek için giriş yapmanız gerekir.
+                    </div>
+                }
+
+                @if (Model.Comments.Any())
+                {
+                    <div class="d-flex flex-column gap-3">
+                        @foreach (var comment in Model.Comments)
+                        {
+                            <partial name="_CommentNode"
+                                     model="comment"
+                                     view-data='new ViewDataDictionary(ViewData) { ["ProfileUserId"] = user.Id }' />
+                        }
+                    </div>
+                }
+                else
+                {
+                    <p class="text-muted mb-0">Henüz yorum yapılmamış. İlk yorumu sen yap!</p>
+                }
+            </section>
+
+            <hr />
+
+
+
+
+
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="reportUserModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content">
+            <form asp-controller="Reports" asp-action="Create" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="entityType" value="User" />
+                <input type="hidden" name="entityId" value="@user.Id" />
+                <input type="hidden" name="returnController" value="Profile" />
+                <input type="hidden" name="returnAction" value="Index" />
+                <input type="hidden" name="returnId" value="@user.Id" />
+                <div class="modal-header">
+                    <h5 class="modal-title">Profili Rapor Et</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+                </div>
+                <div class="modal-body">
+                    <label class="form-label">Rapor nedeni</label>
+                    <textarea class="form-control" name="reason" maxlength="500" rows="4" required></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Vazgeç</button>
+                    <button type="submit" class="btn btn-danger btn-sm">Gönder</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (() => {
+            const ratingStars = document.getElementById("ratingStars");
+            const starsInput = document.getElementById("stars");
+            const ratingForm = document.getElementById("ratingForm");
+
+            if (ratingStars && starsInput && ratingForm) {
+                const starButtons = Array.from(ratingStars.querySelectorAll(".rating-star"));
+                let selectedRating = Number(ratingStars.dataset.selected || 0);
+
+                const renderStars = (activeCount) => {
+                    starButtons.forEach((starButton) => {
+                        const value = Number(starButton.dataset.value);
+                        starButton.classList.toggle("is-active", value <= activeCount);
+                    });
+                };
+
+                renderStars(selectedRating);
+
+                starButtons.forEach((starButton) => {
+                    starButton.addEventListener("mouseenter", () => {
+                        renderStars(Number(starButton.dataset.value));
+                    });
+
+                    starButton.addEventListener("click", () => {
+                        selectedRating = Number(starButton.dataset.value);
+                        starsInput.value = selectedRating;
+                        ratingStars.dataset.selected = selectedRating;
+                        renderStars(selectedRating);
+                    });
+                });
+
+                ratingStars.addEventListener("mouseleave", () => {
+                    renderStars(selectedRating);
+                });
+
+                ratingForm.addEventListener("submit", (event) => {
+                    if (selectedRating < 1 || selectedRating > 5) {
+                        event.preventDefault();
+                    }
+                });
+            }
+
+            const replyToggles = document.querySelectorAll(".reply-toggle");
+            replyToggles.forEach((toggleButton) => {
+                toggleButton.addEventListener("click", () => {
+                    const targetId = toggleButton.dataset.target;
+                    if (!targetId) {
+                        return;
+                    }
+
+                    const targetForm = document.getElementById(targetId);
+                    if (!targetForm) {
+                        return;
+                    }
+
+                    targetForm.classList.toggle("show");
+                });
+            });
+        })();
+    </script>
+}

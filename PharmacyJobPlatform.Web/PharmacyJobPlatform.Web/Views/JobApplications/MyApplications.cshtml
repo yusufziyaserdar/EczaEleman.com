@@ -1,0 +1,86 @@
+﻿@model IEnumerable<MyApplicationViewModel>
+@using PharmacyJobPlatform.Domain.Enums
+
+@{
+    ViewData["Title"] = "Başvurularım";
+}
+
+<div class="container mt-4">
+
+    <h3 class="mb-4"><i class="bi bi-file-earmark-text me-2"></i>Başvurularım</h3>
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info text-center">
+            Henüz herhangi bir ilana başvurmadınız.
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>İlan</th>
+                        <th>Eczane</th>
+                        <th>Tür</th>
+                        <th>Ücret</th>
+                        <th>Durum</th>
+                        <th>Başvuru Tarihi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var app in Model)
+                    {
+                        <tr>
+                            <td><a asp-controller="Jobs" asp-action="Details" asp-route-id="@app.JobPostId" class="fw-bold text-decoration-none">@app.JobTitle</a></td>
+
+                            <td>@app.PharmacyName</td>
+
+                            <td>
+                                @if (app.JobType == JobType.Daily)
+                                {
+                                    <span class="badge bg-warning text-dark">Günlük</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-success">Kalıcı</span>
+                                }
+                            </td>
+
+                            <td>
+                                @if (app.JobType == JobType.Daily)
+                                {
+                                    <span>@app.DailyWage ₺ / gün</span>
+                                }
+                                else
+                                {
+                                    <span>@app.MonthlySalary ₺ / ay</span>
+                                }
+                            </td>
+
+                            <td>
+                                @switch (app.Status)
+                                {
+                                    case ApplicationStatus.Pending:
+                                        <span class="badge bg-secondary">Beklemede</span>
+                                        break;
+                                    case ApplicationStatus.Accepted:
+                                        <span class="badge bg-success">Kabul Edildi</span>
+                                        break;
+                                    case ApplicationStatus.Rejected:
+                                        <span class="badge bg-danger">Reddedildi</span>
+                                        break;
+                                }
+                            </td>
+
+                            <td>
+                                @app.AppliedAt.ToString("dd.MM.yyyy")
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

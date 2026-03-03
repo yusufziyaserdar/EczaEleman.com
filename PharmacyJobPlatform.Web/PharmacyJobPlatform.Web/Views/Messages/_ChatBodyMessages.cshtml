@@ -1,0 +1,95 @@
+﻿@model PharmacyJobPlatform.Domain.Entities.Conversation
+@using System.Security.Claims
+
+@{
+    int userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+
+    bool IsVisible(PharmacyJobPlatform.Domain.Entities.Message m) =>
+        m.SenderId == userId ? !m.DeletedBySender : !m.DeletedByReceiver;
+}
+
+@foreach (var msg in Model.Messages.Where(IsVisible).OrderBy(m => m.SentAt))
+{
+    bool mine = msg.SenderId == userId;
+    var reportModalId = $"chatReportMessageModal-{msg.Id}";
+    var canReport = !mine;
+
+    <div class="d-flex mb-2 @(mine ? "justify-content-end" : "")">
+        <div class="p-2 rounded @(mine ? "bg-primary text-white" : "bg-light")"
+             style="max-width:70%">
+            <div class="dropdown text-end mb-1">
+                <button class="btn btn-sm @(mine ? "btn-outline-light" : "btn-outline-secondary") border-0 py-0 px-1"
+                        type="button"
+                        data-bs-toggle="dropdown"
+                        aria-expanded="false"
+                        aria-label="Mesaj seçenekleri">
+                    <i class="bi bi-three-dots"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li>
+                        <button type="button"
+                                class="dropdown-item"
+                                onclick="deleteMessage(@msg.Id, @Model.Id)">
+                            Sil
+                        </button>
+                    </li>
+                    @if (mine && !msg.IsRecalled)
+                    {
+                        <li>
+                            <button type="button"
+                                    class="dropdown-item"
+                                    onclick="recallMessage(@msg.Id, @Model.Id)">
+                                Geri al
+                            </button>
+                        </li>
+                    }
+                    @if (canReport)
+                    {
+                        <li>
+                            <button type="button"
+                                    class="dropdown-item text-danger"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#@reportModalId">
+                                Rapor Et
+                            </button>
+                        </li>
+                    }
+                </ul>
+            </div>
+            @(msg.IsRecalled ? "Bu mesaj geri alındı." : msg.Content)
+            <div class="text-end">
+                <small>@msg.SentAt.ToLocalTime().ToString("HH:mm")</small>
+            </div>
+        </div>
+    </div>
+
+    @if (canReport)
+    {
+        <div class="modal fade" id="@reportModalId" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-sm modal-dialog-centered">
+            <div class="modal-content">
+                <form asp-controller="Reports" asp-action="Create" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="entityType" value="Message" />
+                    <input type="hidden" name="entityId" value="@msg.Id" />
+                    <input type="hidden" name="returnController" value="Messages" />
+                    <input type="hidden" name="returnAction" value="Chat" />
+                    <input type="hidden" name="returnId" value="@Model.Id" />
+                    <div class="modal-header">
+                        <h5 class="modal-title">Mesajı Rapor Et</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+                    </div>
+                    <div class="modal-body">
+                        <label class="form-label">Rapor nedeni</label>
+                        <textarea class="form-control" name="reason" maxlength="500" rows="4" required></textarea>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Vazgeç</button>
+                        <button type="submit" class="btn btn-danger btn-sm">Gönder</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        </div>
+    }
+}

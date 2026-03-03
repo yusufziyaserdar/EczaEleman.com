@@ -1,0 +1,135 @@
+﻿@model JobPostFilterViewModel
+@using PharmacyJobPlatform.Domain.Enums
+
+<div class="container mt-4">
+
+    @if (TempData["Success"] is string successMessage)
+    {
+        <div class="alert alert-success">@successMessage</div>
+    }
+
+    @if (TempData["Error"] is string errorMessage)
+    {
+        <div class="alert alert-danger">@errorMessage</div>
+    }
+
+    <h3><i class="bi bi-search me-2"></i>İş İlanları</h3>
+
+    <!-- FİLTRE -->
+    <form method="get" class="row g-2 mb-4">
+        <div class="col-md-3">
+            <select class="form-select" name="City">
+                <option value="">Şehir</option>
+                @foreach (var city in Model.Cities)
+                {
+                    <option value="@city" selected="@(city == Model.City)">
+                        @city
+                    </option>
+                }
+            </select>
+        </div>
+
+        <div class="col-md-3">
+            <select class="form-select" name="District">
+                <option value="">İlçe</option>
+                @foreach (var district in Model.Districts)
+                {
+                    <option value="@district" selected="@(district == Model.District)">
+                        @district
+                    </option>
+                }
+            </select>
+        </div>
+
+        <div class="col-md-3">
+            <select class="form-select" name="Neighborhood">
+                <option value="">Mahalle</option>
+                @foreach (var neighborhood in Model.Neighborhoods)
+                {
+                    <option value="@neighborhood" selected="@(neighborhood == Model.Neighborhood)">
+                        @neighborhood
+                    </option>
+                }
+            </select>
+        </div>
+
+        <div class="col-md-3">
+            <input class="form-control" name="Keyword" placeholder="Sözcük arama (Örn: Deneyimsiz çalışan)" value="@Model.Keyword" />
+        </div>
+
+        <div class="col-md-3">
+            <select class="form-select" name="JobType">
+                <option value="">İş Türü</option>
+                <option value="Daily" selected="@(Model.JobType == JobType.Daily)">Günlük</option>
+                <option value="Permanent" selected="@(Model.JobType == JobType.Permanent)">Kalıcı</option>
+            </select>
+        </div>
+
+        <div class="col-md-2">
+            <input class="form-control" name="MinWage" placeholder="Min Ücret" value="@Model.MinWage" />
+        </div>
+
+        <div class="col-md-2">
+            <input class="form-control" name="MaxWage" placeholder="Max Ücret" value="@Model.MaxWage" />
+        </div>
+
+        <div class="col-md-2">
+            <button class="btn btn-primary w-100">Filtrele</button>
+        </div>
+    </form>
+
+    <!-- İLANLAR -->
+    <div class="row">
+        @foreach (var job in Model.Results)
+        {
+            <div class="col-md-4">
+                <div class="card mb-3 shadow-sm">
+                    <div class="card-body position-relative">
+                        <h5 class="card-title">
+                            <a asp-action="Details" asp-route-id="@job.Id" class="stretched-link text-decoration-none">
+                                @job.Title
+                            </a>
+                        </h5>
+                        <p class="text-muted mb-2">@job.City / @job.District / @job.Neighborhood</p>
+
+                        <p>
+                            @if (job.JobType == JobType.Daily)
+                            {
+                                <strong>@job.DailyWage ₺ / gün</strong>
+                            }
+                            else
+                            {
+                                <strong>@job.MonthlySalary ₺ / ay</strong>
+                            }
+                        </p>
+
+                        @if (job.AlreadyApplied)
+                        {
+                            <span class="badge bg-secondary">Başvuruldu</span>
+                        }
+                        else if (User.IsInRole("Admin"))
+                        {
+                            <form asp-action="DeleteByAdmin" method="post" class="position-relative">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@job.Id" />
+                                <button class="btn btn-outline-danger w-100" type="submit">
+                                    İlanı Kaldır
+                                </button>
+                            </form>
+                        }
+                        else
+                        {
+                            <form asp-action="Apply" method="post" class="position-relative">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="jobPostId" value="@job.Id" />
+                                <button class="btn btn-success w-100">
+                                    Başvur
+                                </button>
+                            </form>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
