@@ -35,6 +35,8 @@ namespace PharmacyJobPlatform.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> Login(LoginViewModel model)
         {
+            model.Email = NormalizeEmail(model.Email);
+
             var user = _context.Users
                 .Include(u => u.Role)
                 .FirstOrDefault(u => u.Email == model.Email && !u.IsDeleted);
@@ -99,6 +101,7 @@ namespace PharmacyJobPlatform.Web.Controllers
                 RemoveModelStateByPrefix("WorkExperiences");
             }
 
+            model.Email = NormalizeEmail(model.Email);
             model.PhoneNumber = Regex.Replace(model.PhoneNumber ?? string.Empty, @"\D", string.Empty);
 
             if (!ModelState.IsValid)
@@ -181,8 +184,6 @@ namespace PharmacyJobPlatform.Web.Controllers
                     BuildingNumber = model.Address.BuildingNumber,
                     Description = model.Address.Description
                 };
-
-                _context.Addresses.Add(address);
             }
 
             if (!ModelState.IsValid)
@@ -198,6 +199,7 @@ namespace PharmacyJobPlatform.Web.Controllers
                 Email = model.Email,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(model.Password),
                 PhoneNumber = $"+90{model.PhoneNumber}",
+                BirthDate = model.BirthDate,
                 IsEmailVisible = model.IsEmailVisible,
                 IsPhoneNumberVisible = model.IsPhoneNumberVisible,
                 IsCvVisible = model.IsCvVisible,
@@ -239,17 +241,30 @@ namespace PharmacyJobPlatform.Web.Controllers
                 }
             }
 
-            _context.Users.Add(user);
-            await _context.SaveChangesAsync();
-
-            if (_emailSender == null || _emailSender is NullEmailSender)
+            if (_emailSender is NullEmailSender)
             {
                 ModelState.AddModelError("", "Email servisi yapılandırılmadığı için doğrulama maili gönderilemedi.");
                 SetGoogleMapsApiKey();
                 return View(model);
             }
 
-            await SendConfirmationEmailAsync(user);
+            await using var transaction = await _context.Database.BeginTransactionAsync();
+
+            try
+            {
+                _context.Users.Add(user);
+                await _context.SaveChangesAsync();
+                await SendConfirmationEmailAsync(user);
+                await transaction.CommitAsync();
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                ModelState.AddModelError("", "Kayıt sırasında bir hata oluştu. Lütfen tekrar deneyin.");
+                SetGoogleMapsApiKey();
+                return View(model);
+            }
+
             TempData["AuthMessage"] = "Kayıt tamamlandı. Giriş yapmadan önce email adresinizi doğrulayın.";
             return RedirectToAction("Login");
         }
@@ -263,6 +278,7 @@ namespace PharmacyJobPlatform.Web.Controllers
                 return View();
             }
 
+            email = NormalizeEmail(email);
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email && !u.IsDeleted);
             if (user == null)
             {
@@ -312,6 +328,12 @@ namespace PharmacyJobPlatform.Web.Controllers
         }
 
         public IActionResult AccessDenied() => View();
+
+
+        private static string NormalizeEmail(string? email)
+        {
+            return (email ?? string.Empty).Trim().ToLowerInvariant();
+        }
 
         private void SetGoogleMapsApiKey()
         {

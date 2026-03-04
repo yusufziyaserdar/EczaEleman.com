@@ -21,6 +21,8 @@ namespace PharmacyJobPlatform.Domain.Entities
         [Required]
         public string PhoneNumber { get; set; } = null!;
 
+        public DateTime? BirthDate { get; set; }
+
         public bool IsEmailVisible { get; set; } = true;
 
         public bool IsPhoneNumberVisible { get; set; } = true;

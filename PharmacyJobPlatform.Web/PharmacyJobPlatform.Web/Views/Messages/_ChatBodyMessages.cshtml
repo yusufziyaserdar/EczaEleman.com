@@ -58,7 +58,7 @@
             </div>
             @(msg.IsRecalled ? "Bu mesaj geri alındı." : msg.Content)
             <div class="text-end">
-                <small>@msg.SentAt.ToLocalTime().ToString("HH:mm")</small>
+                <small>@msg.SentAt.ToTurkeyTimeString()</small>
             </div>
         </div>
     </div>

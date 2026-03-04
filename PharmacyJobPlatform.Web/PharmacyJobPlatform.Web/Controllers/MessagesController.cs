@@ -83,7 +83,7 @@ namespace PharmacyJobPlatform.Web.Controllers
                 .Distinct();
 
             var users = _context.Users
-                .Where(u => u.Id != userId)
+                .Where(u => u.Id != userId && !u.IsDeleted)
                 .Where(u => EF.Functions.Like((u.FirstName + " " + u.LastName), $"%{searchTerm}%"))
                 .Select(u => new
                 {

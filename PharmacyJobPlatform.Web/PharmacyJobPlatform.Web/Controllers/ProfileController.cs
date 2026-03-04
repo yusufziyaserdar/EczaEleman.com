@@ -143,6 +143,7 @@ namespace PharmacyJobPlatform.Web.Controllers
                 FirstName = user.FirstName,
                 LastName = user.LastName,
                 PhoneNumber = user.PhoneNumber,
+                BirthDate = user.BirthDate,
                 IsEmailVisible = user.IsEmailVisible,
                 IsPhoneNumberVisible = user.IsPhoneNumberVisible,
                 IsCvVisible = user.IsCvVisible,
@@ -223,6 +224,7 @@ namespace PharmacyJobPlatform.Web.Controllers
             user.FirstName = model.FirstName;
             user.LastName = model.LastName;
             user.PhoneNumber = model.PhoneNumber;
+            user.BirthDate = model.BirthDate;
             user.IsEmailVisible = model.IsEmailVisible;
             user.IsPhoneNumberVisible = model.IsPhoneNumberVisible;
             user.IsCvVisible = model.IsCvVisible;

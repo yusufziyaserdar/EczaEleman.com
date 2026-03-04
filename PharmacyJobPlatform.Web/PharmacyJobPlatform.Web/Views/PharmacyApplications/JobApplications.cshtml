@@ -41,7 +41,7 @@
 
                             <td>@app.WorkerEmail</td>
 
-                            <td>@app.AppliedAt.ToString("dd.MM.yyyy")</td>
+                            <td>@app.AppliedAt.ToTurkeyDateString()</td>
 
                             <td>
                                 @if (app.Status == ApplicationStatus.Pending)

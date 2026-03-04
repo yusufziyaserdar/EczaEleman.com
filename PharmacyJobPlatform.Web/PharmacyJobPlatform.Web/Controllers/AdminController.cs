@@ -20,7 +20,7 @@ namespace PharmacyJobPlatform.Web.Controllers
             _context = context;
         }
 
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(int? supportMessageId = null)
         {
             var pendingReportsRaw = await _context.Reports
                 .AsNoTracking()
@@ -98,7 +98,7 @@ namespace PharmacyJobPlatform.Web.Controllers
                     .ToList(),
                 SupportMessages = await _context.Messages
                     .AsNoTracking()
-                    .Where(m => EF.Functions.Like(m.Content, "[DESTEK]%"))
+                    .Where(m => m.IsSupportMessage)
                     .Include(m => m.Sender)
                     .OrderByDescending(m => m.SentAt)
                     .Take(100)
@@ -110,14 +110,41 @@ namespace PharmacyJobPlatform.Web.Controllers
                         SenderName = m.Sender.FirstName + " " + m.Sender.LastName,
                         Subject = ExtractSupportSubject(m.Content),
                         Content = ExtractSupportContent(m.Content),
-                        SentAt = m.SentAt
+                        SentAt = m.SentAt,
+                        IsReviewed = m.IsSupportReviewed,
+                        ReviewedAt = m.SupportReviewedAt
                     })
                     .ToListAsync()
             };
 
+            ViewData["OpenSupportMessageId"] = supportMessageId;
             return View(model);
         }
 
+
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ReviewSupportMessage(int messageId)
+        {
+            var message = await _context.Messages
+                .FirstOrDefaultAsync(m => m.Id == messageId && m.IsSupportMessage);
+
+            if (message == null)
+            {
+                TempData["Error"] = "Destek mesajı bulunamadı.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (!message.IsSupportReviewed)
+            {
+                message.IsSupportReviewed = true;
+                message.SupportReviewedAt = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
+            }
+
+            return RedirectToAction(nameof(Index), new { supportMessageId = message.Id });
+        }
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ResolveReportRemove(int reportId)

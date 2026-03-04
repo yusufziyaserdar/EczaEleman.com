@@ -77,7 +77,7 @@
                             <li class="list-group-item d-flex justify-content-between">
                                 <span>@post.Title</span>
                                 <small class="text-muted">
-                                    @post.CreatedAt.ToString("dd.MM.yyyy")
+                                    @post.CreatedAt.ToTurkeyDateString()
                                 </small>
                             </li>
                         }
@@ -106,7 +106,7 @@
                             <li class="list-group-item">
                                 <strong>@app.JobPost.Title</strong><br />
                                 <small class="text-muted">
-                                    @app.AppliedAt.ToString("dd.MM.yyyy")
+                                    @app.AppliedAt.ToTurkeyDateString()
                                     —
                                     @if (app.Status == ApplicationStatus.Pending)
                                     {

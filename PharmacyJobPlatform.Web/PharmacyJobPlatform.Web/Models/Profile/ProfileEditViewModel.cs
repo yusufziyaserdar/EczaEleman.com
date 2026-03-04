@@ -16,6 +16,10 @@ namespace PharmacyJobPlatform.Web.Models.Profile
         [Phone]
         public string PhoneNumber { get; set; }
 
+        [DataType(DataType.Date)]
+        [Required(ErrorMessage = "Doğum tarihi zorunludur")]
+        public DateTime? BirthDate { get; set; }
+
         public bool IsEmailVisible { get; set; }
 
         public bool IsPhoneNumberVisible { get; set; }

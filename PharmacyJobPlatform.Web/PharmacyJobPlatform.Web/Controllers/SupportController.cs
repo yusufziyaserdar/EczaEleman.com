@@ -76,7 +76,9 @@ namespace PharmacyJobPlatform.Web.Controllers
                 SenderId = senderId,
                 Content = supportMessage,
                 SentAt = DateTime.UtcNow,
-                IsRead = false
+                IsRead = false,
+                IsSupportMessage = true,
+                IsSupportReviewed = false
             });
 
             await _context.SaveChangesAsync();

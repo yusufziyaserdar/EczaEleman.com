@@ -73,5 +73,7 @@ namespace PharmacyJobPlatform.Web.Models.Admin
         public string Subject { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
         public DateTime SentAt { get; set; }
+        public bool IsReviewed { get; set; }
+        public DateTime? ReviewedAt { get; set; }
     }
 }

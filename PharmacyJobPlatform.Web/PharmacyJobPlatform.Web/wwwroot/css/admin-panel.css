@@ -53,3 +53,17 @@
     max-width: 460px;
     white-space: normal;
 }
+
+.admin-single-line {
+    max-width: 360px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.admin-status-corner {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 76px;
+}

@@ -1,6 +1,7 @@
 @model PharmacyJobPlatform.Web.Models.Admin.AdminDashboardViewModel
 @{
     ViewData["Title"] = "Admin Paneli";
+    var openSupportMessageId = ViewData["OpenSupportMessageId"] as int?;
 }
 
 @section Styles {
@@ -96,7 +97,7 @@
                                         <span class="badge text-bg-secondary ms-1">Kaldırıldı</span>
                                     }
                                 </td>
-                                <td>@user.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</td>
+                                <td>@user.CreatedAt.ToTurkeyDateTimeString()</td>
                                 <td class="text-end">
                                     <a class="btn btn-sm btn-outline-light" asp-controller="Profile" asp-action="Index" asp-route-id="@user.Id">Profili Aç</a>
                                     @if (user.RoleName != "Admin")
@@ -156,7 +157,7 @@
                                         @(post.IsDeleted ? "Kaldırıldı" : post.IsActive ? "Aktif" : "Pasif")
                                     </span>
                                 </td>
-                                <td>@post.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</td>
+                                <td>@post.CreatedAt.ToTurkeyDateTimeString()</td>
                                 <td class="text-end">
                                     @if (!post.IsDeleted)
                                     {
@@ -213,7 +214,7 @@
                                 <td>@comment.Id</td>
                                 <td>@comment.AuthorName</td>
                                 <td class="admin-comment-text">@(comment.IsDeleted ? "[Kaldırılmış yorum]" : comment.Content)</td>
-                                <td>@comment.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</td>
+                                <td>@comment.CreatedAt.ToTurkeyDateTimeString()</td>
                                 <td class="text-end">
                                     <a asp-controller="Profile" asp-action="Index" asp-route-id="@comment.ProfileUserId" class="btn btn-sm btn-outline-light">Profile Git</a>
                                     @if (comment.IsDeleted)
@@ -258,7 +259,7 @@
                             <td>@report.ReporterName</td>
                             <td>@report.Reason</td>
                             <td>@report.ReportedContent</td>
-                            <td>@report.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</td>
+                            <td>@report.CreatedAt.ToTurkeyDateTimeString()</td>
                             <td class="text-end">
                                 <form asp-action="ResolveReportRemove" method="post" class="d-inline">
                                     @Html.AntiForgeryToken()
@@ -307,7 +308,7 @@
                             <td>@report.ReportedContent</td>
                             <td>@(report.Status == PharmacyJobPlatform.Domain.Enums.ReportStatus.ResolvedRemoved ? "İçerik Kaldırıldı" : "İçerik Bırakıldı")</td>
                             <td>@report.ReviewedByAdminName</td>
-                            <td>@report.ReviewedAt?.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</td>
+                            <td>@report.ReviewedAt?.ToTurkeyDateTimeString()</td>
                             <td>
                                 @if (!string.IsNullOrEmpty(report.ContentLinkController) && !string.IsNullOrEmpty(report.ContentLinkAction) && report.ContentLinkId.HasValue)
                                 {
@@ -327,21 +328,26 @@
         </div>
 
         <div class="tab-pane fade" id="support" role="tabpanel">
-            <h5 class="mt-3">Kullanıcı Destek Mesajları</h5>
-            <div class="table-responsive">
+            @{
+                var pendingSupportMessages = Model.SupportMessages.Where(x => !x.IsReviewed).ToList();
+                var reviewedSupportMessages = Model.SupportMessages.Where(x => x.IsReviewed).ToList();
+            }
+
+            <h5 class="mt-3">Görülmeyen Destek Mesajları (@pendingSupportMessages.Count)</h5>
+            <div class="table-responsive mb-4">
                 <table class="table table-dark table-striped align-middle">
                     <thead>
                         <tr>
                             <th>#</th>
                             <th>Gönderen</th>
                             <th>Konu</th>
-                            <th>Mesaj</th>
+                            <th>Mesaj Özeti</th>
                             <th>Tarih</th>
                             <th class="text-end">İşlem</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach (var supportMessage in Model.SupportMessages)
+                        @foreach (var supportMessage in pendingSupportMessages)
                         {
                             <tr>
                                 <td>@supportMessage.Id</td>
@@ -351,12 +357,101 @@
                                     </a>
                                 </td>
                                 <td>@supportMessage.Subject</td>
-                                <td class="admin-comment-text">@supportMessage.Content</td>
-                                <td>@supportMessage.SentAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</td>
+                                <td class="admin-single-line">@supportMessage.Content</td>
+                                <td>@supportMessage.SentAt.ToTurkeyDateTimeString()</td>
                                 <td class="text-end">
-                                    <a asp-controller="Messages" asp-action="Chat" asp-route-id="@supportMessage.ConversationId" class="btn btn-sm btn-outline-info">Sohbete Git</a>
+                                    <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#supportMessageModal-@supportMessage.Id">Değerlendir</button>
                                 </td>
                             </tr>
+
+                            <div class="modal fade" id="supportMessageModal-@supportMessage.Id" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                                    <div class="modal-content bg-dark text-light border-secondary">
+                                        <div class="modal-header border-secondary">
+                                            <h5 class="modal-title">Destek Mesajı - @supportMessage.Subject</h5>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Kapat"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p class="mb-2"><strong>Gönderen:</strong> @supportMessage.SenderName</p>
+                                            <p class="mb-2"><strong>Tarih:</strong> @supportMessage.SentAt.ToTurkeyDateTimeString()</p>
+                                            <hr class="border-secondary" />
+                                            <p class="mb-0">@supportMessage.Content</p>
+                                        </div>
+                                        <div class="modal-footer border-secondary">
+                                            <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Kapat</button>
+                                            <form asp-action="ReviewSupportMessage" method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="messageId" value="@supportMessage.Id" />
+                                                <button type="submit" class="btn btn-success">Görüldü Olarak İşaretle</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <h5>Görüldü Destek Mesajları (@reviewedSupportMessages.Count)</h5>
+            <div class="table-responsive">
+                <table class="table table-dark table-striped align-middle">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Gönderen</th>
+                            <th>Konu</th>
+                            <th>Mesaj Özeti</th>
+                            <th>Gönderim</th>
+                            <th>Durum</th>
+                            <th class="text-end">İşlem</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var supportMessage in reviewedSupportMessages)
+                        {
+                            <tr>
+                                <td>@supportMessage.Id</td>
+                                <td>
+                                    <a asp-controller="Profile" asp-action="Index" asp-route-id="@supportMessage.SenderId" class="link-light text-decoration-none">
+                                        @supportMessage.SenderName
+                                    </a>
+                                </td>
+                                <td>@supportMessage.Subject</td>
+                                <td class="admin-single-line">@supportMessage.Content</td>
+                                <td>@supportMessage.SentAt.ToTurkeyDateTimeString()</td>
+                                <td>
+                                    <span class="badge text-bg-success admin-status-corner">Görüldü</span>
+                                    @if (supportMessage.ReviewedAt.HasValue)
+                                    {
+                                        <div class="small text-muted">@supportMessage.ReviewedAt.Value.ToTurkeyDateTimeString()</div>
+                                    }
+                                </td>
+                                <td class="text-end">
+                                    <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#supportMessageModal-@supportMessage.Id">Detayı Aç</button>
+                                </td>
+                            </tr>
+
+                            <div class="modal fade" id="supportMessageModal-@supportMessage.Id" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                                    <div class="modal-content bg-dark text-light border-secondary">
+                                        <div class="modal-header border-secondary">
+                                            <h5 class="modal-title">Destek Mesajı - @supportMessage.Subject</h5>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Kapat"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p class="mb-2"><strong>Gönderen:</strong> @supportMessage.SenderName</p>
+                                            <p class="mb-2"><strong>Gönderim:</strong> @supportMessage.SentAt.ToTurkeyDateTimeString()</p>
+                                            <p class="mb-2"><strong>Durum:</strong> Görüldü</p>
+                                            <hr class="border-secondary" />
+                                            <p class="mb-0">@supportMessage.Content</p>
+                                        </div>
+                                        <div class="modal-footer border-secondary">
+                                            <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Kapat</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         }
                     </tbody>
                 </table>
@@ -365,3 +460,25 @@
 
     </div>
 </div>
+
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const openId = '@(openSupportMessageId?.ToString() ?? string.Empty)';
+            if (openId) {
+                const supportTabButton = document.querySelector('button[data-bs-target="#support"]');
+                if (supportTabButton) {
+                    const tab = new bootstrap.Tab(supportTabButton);
+                    tab.show();
+                }
+
+                const modalElement = document.getElementById(`supportMessageModal-${openId}`);
+                if (modalElement) {
+                    const modal = new bootstrap.Modal(modalElement);
+                    modal.show();
+                }
+            }
+        });
+    </script>
+}

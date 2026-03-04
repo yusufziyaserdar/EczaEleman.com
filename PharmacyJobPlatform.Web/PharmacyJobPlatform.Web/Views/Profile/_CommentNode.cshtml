@@ -23,7 +23,7 @@
                     <a asp-controller="Profile" asp-action="Index" asp-route-id="@Model.AuthorUserId" class="text-decoration-none">@Model.AuthorDisplayName</a>
                 }
             </div>
-            <div class="comment-meta">@Model.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</div>
+            <div class="comment-meta">@Model.CreatedAt.ToTurkeyDateTimeString()</div>
         </div>
         @if (Model.IsAnonymous)
         {

@@ -28,5 +28,11 @@ namespace PharmacyJobPlatform.Domain.Entities
         public bool DeletedBySender { get; set; } = false;
 
         public bool DeletedByReceiver { get; set; } = false;
+
+        public bool IsSupportMessage { get; set; } = false;
+
+        public bool IsSupportReviewed { get; set; } = false;
+
+        public DateTime? SupportReviewedAt { get; set; }
     }
 }

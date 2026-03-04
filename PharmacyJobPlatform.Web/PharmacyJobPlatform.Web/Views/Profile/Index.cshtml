@@ -22,6 +22,22 @@
 
     int years = totalMonths / 12;
     int months = totalMonths % 12;
+    int? displayAge = null;
+    if (user.BirthDate.HasValue)
+    {
+        var today = DateTime.Today;
+        var age = today.Year - user.BirthDate.Value.Year;
+        if (user.BirthDate.Value.Date > today.AddYears(-age))
+        {
+            age--;
+        }
+
+        if (age >= 0)
+        {
+            displayAge = age;
+        }
+    }
+
     var currentUserId = User.Identity?.IsAuthenticated == true
         ? User.FindFirst(ClaimTypes.NameIdentifier)?.Value
         : null;
@@ -213,9 +229,20 @@
                         </p>
                     }
 
+                    @if (user.BirthDate.HasValue)
+                    {
+                        <p class="mb-1">
+                            <i class="bi bi-cake2 me-2"></i>@user.BirthDate.Value.ToString("dd.MM.yyyy")
+                            @if (displayAge.HasValue)
+                            {
+                                <span class="text-muted">(@displayAge yaş)</span>
+                            }
+                        </p>
+                    }
+
                     <p class="text-muted">
                         Platforma katılma:
-                        @user.CreatedAt.ToShortDateString()
+                        @user.CreatedAt.ToTurkeyDateString()
                     </p>
 
                     @if (User.Identity?.IsAuthenticated == true &&
@@ -354,10 +381,10 @@
                         <li class="list-group-item">
                             <strong>@exp.PharmacyName</strong><br />
                             <small class="text-muted">
-                                @exp.StartDate.ToString("MM/yyyy")
+                                @exp.StartDate.ToString("dd/MM/yyyy")
                                 -
                                 @(exp.EndDate.HasValue
-                                    ? exp.EndDate.Value.ToString("MM/yyyy")
+                                    ? exp.EndDate.Value.ToString("dd/MM/yyyy")
                                     : "Devam ediyor")
                             </small>
                         </li>

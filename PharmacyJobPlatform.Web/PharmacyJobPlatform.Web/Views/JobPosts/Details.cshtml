@@ -34,7 +34,7 @@
             @if (Model.JobType == JobType.Daily)
             {
                 <p><strong>Günlük Ücret:</strong> @Model.DailyWage ₺</p>
-                <p><strong>Tarih:</strong> @Model.WorkDate?.ToString("dd.MM.yyyy")</p>
+                <p><strong>Tarih:</strong> @Model.WorkDate?.ToString("dd/MM/yyyy")</p>
             }
             else
             {
