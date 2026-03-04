@@ -89,6 +89,7 @@ namespace PharmacyJobPlatform.Web.Controllers
                 {
                     id = u.Id,
                     fullName = u.FirstName + " " + u.LastName,
+                    profileImagePath = u.ProfileImagePath,
                     isInteracted = interactedUserIdsQuery.Contains(u.Id)
                 })
                 .OrderByDescending(u => u.isInteracted)

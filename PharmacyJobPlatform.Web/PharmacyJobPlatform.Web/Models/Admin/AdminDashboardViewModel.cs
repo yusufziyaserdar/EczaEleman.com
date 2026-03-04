@@ -14,6 +14,7 @@ namespace PharmacyJobPlatform.Web.Models.Admin
         public List<AdminCommentItemViewModel> Comments { get; set; } = new();
         public List<AdminReportItemViewModel> PendingReports { get; set; } = new();
         public List<AdminReportItemViewModel> ReviewedReports { get; set; } = new();
+        public List<AdminSupportMessageItemViewModel> SupportMessages { get; set; } = new();
     }
 
     public class AdminUserItemViewModel
@@ -61,5 +62,16 @@ namespace PharmacyJobPlatform.Web.Models.Admin
         public DateTime CreatedAt { get; set; }
         public DateTime? ReviewedAt { get; set; }
         public string? ReviewedByAdminName { get; set; }
+    }
+
+    public class AdminSupportMessageItemViewModel
+    {
+        public int Id { get; set; }
+        public int ConversationId { get; set; }
+        public int SenderId { get; set; }
+        public string SenderName { get; set; } = string.Empty;
+        public string Subject { get; set; } = string.Empty;
+        public string Content { get; set; } = string.Empty;
+        public DateTime SentAt { get; set; }
     }
 }

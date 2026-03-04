@@ -104,6 +104,12 @@
                                     <i class="fa-solid fa-file-circle-check"></i> Başvurularım
                                 </a>
                             </li>
+
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Support" asp-action="Index">
+                                    <i class="fa-solid fa-life-ring"></i> Destek
+                                </a>
+                            </li>
                         }
 
                         @if (User.IsInRole("Admin"))
@@ -140,6 +146,13 @@
                                     <i class="fa-solid fa-plus"></i> İlan Oluştur
                                 </a>
                             </li>
+
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Support" asp-action="Index">
+                                    <i class="fa-solid fa-life-ring"></i> Destek
+                                </a>
+                            </li>
+
 
                         }
                     }
@@ -271,9 +284,13 @@
                         const badge = user.isInteracted
                             ? '<span class="badge text-bg-light border">Daha önce etkileşimde</span>'
                             : '';
+                        const profileImagePath = user.profileImagePath || '/images/profiles/default-profile.png';
 
-                        return `<a href="/Profile/${user.id}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-                                    <span>${user.fullName}</span>
+                        return `<a href="/Profile/${user.id}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center gap-2">
+                                    <span class="d-flex align-items-center gap-2">
+                                        <img src="${profileImagePath}" alt="${user.fullName}" class="navbar-user-search__avatar" />
+                                        <span>${user.fullName}</span>
+                                    </span>
                                     ${badge}
                                 </a>`;
                     }).join('');

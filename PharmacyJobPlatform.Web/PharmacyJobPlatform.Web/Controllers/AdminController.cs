@@ -95,7 +95,24 @@ namespace PharmacyJobPlatform.Web.Controllers
                     .ToList(),
                 ReviewedReports = reviewedReportsRaw
                     .Select(r => MapReport(r, includeReviewedBy: true))
-                    .ToList()
+                    .ToList(),
+                SupportMessages = await _context.Messages
+                    .AsNoTracking()
+                    .Where(m => EF.Functions.Like(m.Content, "[DESTEK]%"))
+                    .Include(m => m.Sender)
+                    .OrderByDescending(m => m.SentAt)
+                    .Take(100)
+                    .Select(m => new AdminSupportMessageItemViewModel
+                    {
+                        Id = m.Id,
+                        ConversationId = m.ConversationId,
+                        SenderId = m.SenderId,
+                        SenderName = m.Sender.FirstName + " " + m.Sender.LastName,
+                        Subject = ExtractSupportSubject(m.Content),
+                        Content = ExtractSupportContent(m.Content),
+                        SentAt = m.SentAt
+                    })
+                    .ToListAsync()
             };
 
             return View(model);
@@ -185,6 +202,42 @@ namespace PharmacyJobPlatform.Web.Controllers
             await _context.SaveChangesAsync();
             TempData["Success"] = "Rapor incelendi, içerik yayında bırakıldı.";
             return RedirectToAction(nameof(Index));
+        }
+
+
+        private static string ExtractSupportSubject(string rawContent)
+        {
+            const string supportPrefix = "[DESTEK]";
+            if (string.IsNullOrWhiteSpace(rawContent) || !rawContent.StartsWith(supportPrefix, StringComparison.OrdinalIgnoreCase))
+            {
+                return "(Konu bulunamadı)";
+            }
+
+            var withoutPrefix = rawContent[supportPrefix.Length..].TrimStart();
+            var splitIndex = withoutPrefix.IndexOf("\n\n", StringComparison.Ordinal);
+
+            return splitIndex >= 0
+                ? withoutPrefix[..splitIndex].Trim()
+                : withoutPrefix.Trim();
+        }
+
+        private static string ExtractSupportContent(string rawContent)
+        {
+            const string supportPrefix = "[DESTEK]";
+            if (string.IsNullOrWhiteSpace(rawContent) || !rawContent.StartsWith(supportPrefix, StringComparison.OrdinalIgnoreCase))
+            {
+                return rawContent;
+            }
+
+            var withoutPrefix = rawContent[supportPrefix.Length..].TrimStart();
+            var splitIndex = withoutPrefix.IndexOf("\n\n", StringComparison.Ordinal);
+
+            if (splitIndex < 0 || splitIndex + 2 >= withoutPrefix.Length)
+            {
+                return string.Empty;
+            }
+
+            return withoutPrefix[(splitIndex + 2)..].Trim();
         }
 
         private AdminReportItemViewModel MapReport(Report report, bool includeReviewedBy)
