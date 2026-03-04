@@ -30,6 +30,7 @@ namespace PharmacyJobPlatform.Web.Controllers
             var user = _context.Users
                 .Include(u => u.Role)
                 .Include(u => u.WorkExperiences)
+                .Include(u => u.Address)
                 .FirstOrDefault(u => u.Id == id && !u.IsDeleted);
 
             if (user == null)
@@ -105,6 +106,17 @@ namespace PharmacyJobPlatform.Web.Controllers
                 RatingCount = ratingCount,
                 CanRateUser = canRateUser,
                 ExistingRating = existingRating,
+                PharmacyAddressText = user.Address == null
+                    ? null
+                    : string.Join(", ", new[]
+                    {
+                        user.Address.Street,
+                        user.Address.BuildingNumber,
+                        user.Address.Neighborhood,
+                        user.Address.District,
+                        user.Address.City,
+                        user.Address.Description
+                    }.Where(x => !string.IsNullOrWhiteSpace(x))),
                 Comments = GetProfileComments(user.Id)
             };
 
@@ -225,6 +237,38 @@ namespace PharmacyJobPlatform.Web.Controllers
             user.ReportControlLevel = model.ReportControlLevel;
             user.PrescriptionControlLevel = model.PrescriptionControlLevel;
             user.SutKnowledgeLevel = model.SutKnowledgeLevel;
+
+            if (!string.IsNullOrWhiteSpace(model.NewPassword) ||
+                !string.IsNullOrWhiteSpace(model.CurrentPassword) ||
+                !string.IsNullOrWhiteSpace(model.ConfirmNewPassword))
+            {
+                if (string.IsNullOrWhiteSpace(model.CurrentPassword) ||
+                    string.IsNullOrWhiteSpace(model.NewPassword) ||
+                    string.IsNullOrWhiteSpace(model.ConfirmNewPassword))
+                {
+                    ModelState.AddModelError(string.Empty, "Şifre değiştirmek için tüm şifre alanlarını doldurmalısınız.");
+                }
+                else if (!BCrypt.Net.BCrypt.Verify(model.CurrentPassword, user.PasswordHash))
+                {
+                    ModelState.AddModelError(nameof(model.CurrentPassword), "Mevcut şifre hatalı.");
+                }
+                else if (model.CurrentPassword == model.NewPassword)
+                {
+                    ModelState.AddModelError(nameof(model.NewPassword), "Yeni şifre mevcut şifre ile aynı olamaz.");
+                }
+                else
+                {
+                    user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(model.NewPassword);
+                }
+            }
+
+            if (!ModelState.IsValid)
+            {
+                ViewData["IsPharmacyOwner"] = user.Role?.Name == "PharmacyOwner";
+                ViewData["GoogleMapsApiKey"] = _configuration["GoogleMaps:ApiKey"];
+                return View(model);
+            }
+
             if (user.Role?.Name == "PharmacyOwner")
             {
                 user.PharmacyName = model.PharmacyName;

@@ -7,6 +7,17 @@
 
 <div class="container mt-4">
 
+    @if (TempData["Success"] is string successMessage)
+    {
+        <div class="alert alert-success">@successMessage</div>
+    }
+
+    @if (TempData["Error"] is string errorMessage)
+    {
+        <div class="alert alert-danger">@errorMessage</div>
+    }
+
+
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h3><i class="bi bi-card-list me-2"></i>Benim İş İlanlarım</h3>
 
@@ -100,6 +111,17 @@
                                    class="btn btn-sm btn-outline-success">
                                     <i class="bi bi-inbox-arrow-down me-2"></i>Başvurular
                                 </a>
+
+                                <form asp-action="Delete"
+                                      method="post"
+                                      class="d-inline"
+                                      onsubmit="return confirm('Silmek istediğinize emin misiniz?');">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@post.Id" />
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
 
                             </td>
                         </tr>

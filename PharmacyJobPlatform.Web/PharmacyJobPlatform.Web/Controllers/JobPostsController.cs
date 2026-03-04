@@ -82,6 +82,7 @@ namespace PharmacyJobPlatform.Web.Controllers
             _context.JobPosts.Add(post);
             await _context.SaveChangesAsync();
 
+            TempData["Success"] = "İlan kaydedildi.";
             return RedirectToAction(nameof(MyPosts));
         }
 
@@ -165,6 +166,31 @@ namespace PharmacyJobPlatform.Web.Controllers
 
             await _context.SaveChangesAsync();
 
+            TempData["Success"] = "İlan kaydedildi.";
+            return RedirectToAction(nameof(MyPosts));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Delete(int id)
+        {
+            int userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+
+            var post = await _context.JobPosts
+                .FirstOrDefaultAsync(x => x.Id == id && x.PharmacyOwnerId == userId && !x.IsDeleted);
+
+            if (post == null)
+            {
+                TempData["Error"] = "İlan bulunamadı.";
+                return RedirectToAction(nameof(MyPosts));
+            }
+
+            post.IsDeleted = true;
+            post.IsActive = false;
+            post.DeletedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+            TempData["Success"] = "İlan silindi.";
             return RedirectToAction(nameof(MyPosts));
         }
     }

@@ -23,6 +23,13 @@ namespace PharmacyJobPlatform.Web.Models.JobPost
         public bool IsActive { get; set; }
         public DateTime CreatedAt { get; set; }
 
+        public int PharmacyOwnerId { get; set; }
+        public string PharmacyOwnerFullName { get; set; } = null!;
+        public string PharmacyName { get; set; } = null!;
+        public string? Street { get; set; }
+        public string? BuildingNumber { get; set; }
+        public string? AddressDescription { get; set; }
+
         public bool AlreadyApplied { get; set; }
     }
 }

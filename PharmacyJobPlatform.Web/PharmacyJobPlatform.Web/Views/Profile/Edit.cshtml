@@ -38,6 +38,8 @@
 
     <input type="hidden" asp-for="Id" />
 
+    <div asp-validation-summary="ModelOnly" class="text-danger mb-2"></div>
+
     <div class="mb-3">
         <label>Ad</label>
         <input asp-for="FirstName" class="form-control" />
@@ -252,6 +254,29 @@
             @await Html.PartialAsync("_TechnicalRatingInput", ("SutKnowledgeLevel", "SUT(Sağlık Uygulama Tebliği)'a Hakimiyet", Model.SutKnowledgeLevel))
         </div>
     }
+
+    <hr />
+    <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body">
+            <h5 class="mb-3"><i class="bi bi-shield-lock me-2"></i>Şifre Değiştir</h5>
+            <p class="text-muted small">Şifrenizi değiştirmek için mevcut şifrenizi girin.</p>
+            <div class="mb-3">
+                <label asp-for="CurrentPassword" class="form-label">Mevcut Şifre</label>
+                <input asp-for="CurrentPassword" class="form-control" type="password" autocomplete="current-password" />
+                <span asp-validation-for="CurrentPassword" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="NewPassword" class="form-label">Yeni Şifre</label>
+                <input asp-for="NewPassword" class="form-control" type="password" autocomplete="new-password" />
+                <span asp-validation-for="NewPassword" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="ConfirmNewPassword" class="form-label">Yeni Şifre (Tekrar)</label>
+                <input asp-for="ConfirmNewPassword" class="form-control" type="password" autocomplete="new-password" />
+                <span asp-validation-for="ConfirmNewPassword" class="text-danger"></span>
+            </div>
+        </div>
+    </div>
 
     <button class="btn btn-success">Kaydet</button>
 </form>

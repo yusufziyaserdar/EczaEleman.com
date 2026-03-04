@@ -97,6 +97,12 @@ namespace PharmacyJobPlatform.Web.Controllers
                     City = x.Address.City,
                     District = x.Address.District,
                     Neighborhood = x.Address.Neighborhood,
+                    PharmacyOwnerId = x.PharmacyOwnerId,
+                    PharmacyOwnerFullName = x.PharmacyOwner.FirstName + " " + x.PharmacyOwner.LastName,
+                    PharmacyName = x.PharmacyOwner.PharmacyName ?? "Belirtilmemiş",
+                    Street = x.Address.Street,
+                    BuildingNumber = x.Address.BuildingNumber,
+                    AddressDescription = x.Address.Description,
                     JobType = x.JobType,
                     DailyWage = x.DailyWage,
                     MonthlySalary = x.MonthlySalary,
@@ -130,6 +136,12 @@ namespace PharmacyJobPlatform.Web.Controllers
                     MonthlySalary = x.MonthlySalary,
                     IsActive = x.IsActive,
                     CreatedAt = x.CreatedAt,
+                    PharmacyOwnerId = x.PharmacyOwnerId,
+                    PharmacyOwnerFullName = x.PharmacyOwner.FirstName + " " + x.PharmacyOwner.LastName,
+                    PharmacyName = x.PharmacyOwner.PharmacyName ?? "Belirtilmemiş",
+                    Street = x.Address.Street,
+                    BuildingNumber = x.Address.BuildingNumber,
+                    AddressDescription = x.Address.Description,
                     AlreadyApplied = _context.JobApplications
                         .Any(a => a.JobPostId == x.Id && a.WorkerId == workerId)
                 })

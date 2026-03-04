@@ -34,6 +34,17 @@ namespace PharmacyJobPlatform.Web.Models.Profile
 
         public bool IsCvVisible { get; set; }
 
+        [DataType(DataType.Password)]
+        public string? CurrentPassword { get; set; }
+
+        [DataType(DataType.Password)]
+        [MinLength(6, ErrorMessage = "Yeni şifre en az 6 karakter olmalıdır.")]
+        public string? NewPassword { get; set; }
+
+        [DataType(DataType.Password)]
+        [Compare(nameof(NewPassword), ErrorMessage = "Yeni şifreler birbiriyle aynı olmalıdır.")]
+        public string? ConfirmNewPassword { get; set; }
+
 
         [Range(1, 5)]
         public int? DrugKnowledgeLevel { get; set; }

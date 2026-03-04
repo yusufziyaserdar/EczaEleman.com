@@ -22,6 +22,8 @@ namespace PharmacyJobPlatform.Web.Models.Profile
 
         public int? ExistingRating { get; set; }
 
+        public string? PharmacyAddressText { get; set; }
+
         public List<ProfileCommentItemViewModel> Comments { get; set; } = new();
     }
 }

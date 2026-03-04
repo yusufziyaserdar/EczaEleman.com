@@ -6,7 +6,8 @@
         <div class="card-body">
 
             <h3>@Model.Title</h3>
-
+            <p class="mb-1"><strong>Eczane:</strong> @Model.PharmacyName</p>
+            <p class="mb-2"><a asp-controller="Profile" asp-action="Index" asp-route-id="@Model.PharmacyOwnerId">İlanı paylaşan eczacı: @Model.PharmacyOwnerFullName</a></p>
 
             @if(Model.JobType==JobType.Permanent)
             {
@@ -28,8 +29,7 @@
 
             <p>
                 <strong>Adres:</strong><br />
-                @Model.City / @Model.District<br />
-                @Model.Neighborhood
+                @string.Join(", ", new[] { Model.Street, Model.BuildingNumber, Model.Neighborhood, Model.District, Model.City, Model.AddressDescription }.Where(x => !string.IsNullOrWhiteSpace(x)))
             </p>
 
             @if (Model.JobType == JobType.Daily)

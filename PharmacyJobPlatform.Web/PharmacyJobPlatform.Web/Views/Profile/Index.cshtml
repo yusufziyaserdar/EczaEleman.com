@@ -418,6 +418,14 @@
                 <hr />
             }
 
+            @if (user.Role.Name == "PharmacyOwner")
+            {
+                <h5><i class="bi bi-shop me-2"></i>Eczane Bilgileri</h5>
+                <p class="mb-1"><strong>Eczane Adı:</strong> @(string.IsNullOrWhiteSpace(user.PharmacyName) ? "Belirtilmemiş" : user.PharmacyName)</p>
+                <p class="mb-2"><strong>Eczane Adresi:</strong> @(string.IsNullOrWhiteSpace(Model.PharmacyAddressText) ? "Belirtilmemiş" : Model.PharmacyAddressText)</p>
+                <hr />
+            }
+
             <h5><i class="bi bi-star-fill me-2 text-warning"></i>Değerlendirme</h5>
 
             @if (Model.AverageRating.HasValue)

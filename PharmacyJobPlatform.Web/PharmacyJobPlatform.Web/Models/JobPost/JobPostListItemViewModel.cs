@@ -6,11 +6,17 @@ namespace PharmacyJobPlatform.Web.Models.JobPost
     {
         public int Id { get; set; }
 
-        public string Title { get; set; }
-        public string City { get; set; }
-        public string District { get; set; }
-        public string Neighborhood { get; set; }
-        public string Description { get; set; }
+        public string Title { get; set; } = null!;
+        public string City { get; set; } = null!;
+        public string District { get; set; } = null!;
+        public string Neighborhood { get; set; } = null!;
+        public string Description { get; set; } = null!;
+        public int PharmacyOwnerId { get; set; }
+        public string PharmacyOwnerFullName { get; set; } = null!;
+        public string PharmacyName { get; set; } = null!;
+        public string? Street { get; set; }
+        public string? BuildingNumber { get; set; }
+        public string? AddressDescription { get; set; }
 
         public JobType JobType { get; set; }
 

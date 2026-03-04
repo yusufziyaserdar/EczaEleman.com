@@ -91,6 +91,9 @@
                             </a>
                         </h5>
                         <p class="text-muted mb-2">@job.City / @job.District / @job.Neighborhood</p>
+                        <p class="mb-1"><strong>Eczane:</strong> @job.PharmacyName</p>
+                        <p class="mb-2"><strong>Adres:</strong> @string.Join(", ", new[] { job.Street, job.BuildingNumber, job.Neighborhood, job.District, job.City, job.AddressDescription }.Where(x => !string.IsNullOrWhiteSpace(x)))</p>
+                        <a asp-controller="Profile" asp-action="Index" asp-route-id="@job.PharmacyOwnerId" class="d-inline-block mb-2">İlanı paylaşan eczacı: @job.PharmacyOwnerFullName</a>
 
                         <p>
                             @if (job.JobType == JobType.Daily)
