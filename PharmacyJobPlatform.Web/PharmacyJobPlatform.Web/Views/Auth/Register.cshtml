@@ -107,6 +107,13 @@
                     </div>
 
                     <div class="mb-3">
+                        <div class="form-check">
+                            <input asp-for="IsCvVisible" class="form-check-input" />
+                            <label asp-for="IsCvVisible" class="form-check-label">CV profilimde görünsün</label>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
                         <label asp-for="About">Hakkımda</label>
                         <textarea asp-for="About" rows="3" class="form-control"></textarea>
                     </div>
@@ -126,13 +133,6 @@
                     <div class="mb-3">
                         <label asp-for="ProfileImage">Profil Fotoğrafı</label>
                         <input asp-for="ProfileImage" type="file" class="form-control" />
-                    </div>
-
-                    <div class="mb-3">
-                        <div class="form-check">
-                            <input asp-for="IsCvVisible" class="form-check-input" />
-                            <label asp-for="IsCvVisible" class="form-check-label">CV profilimde görünsün</label>
-                        </div>
                     </div>
 
                     <!-- ================= WORKER ================= -->
