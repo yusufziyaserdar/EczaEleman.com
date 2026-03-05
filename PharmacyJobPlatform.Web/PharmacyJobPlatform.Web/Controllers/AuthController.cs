@@ -5,11 +5,13 @@ using System.Security.Claims;
 using PharmacyJobPlatform.Infrastructure.Data;
 using PharmacyJobPlatform.Web.Models.Auth;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Data.SqlClient;
 using PharmacyJobPlatform.Domain.Entities;
 using PharmacyJobPlatform.Web.Services;
 using Microsoft.AspNetCore.WebUtilities;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.Logging;
 
 namespace PharmacyJobPlatform.Web.Controllers
 {
@@ -19,14 +21,17 @@ namespace PharmacyJobPlatform.Web.Controllers
         private readonly ApplicationDbContext _context;
         private readonly IConfiguration _configuration;
         private readonly IEmailSender _emailSender;
+        private readonly ILogger<AuthController> _logger;
 
         public AuthController(
             ApplicationDbContext context,
             IConfiguration configuration,
+            ILogger<AuthController> logger,
             IEmailSender? emailSender = null)
         {
             _context = context;
             _configuration = configuration;
+            _logger = logger;
             _emailSender = emailSender ?? new NullEmailSender();
         }
 
@@ -241,31 +246,54 @@ namespace PharmacyJobPlatform.Web.Controllers
                 }
             }
 
-            if (_emailSender is NullEmailSender)
-            {
-                ModelState.AddModelError("", "Email servisi yapılandırılmadığı için doğrulama maili gönderilemedi.");
-                SetGoogleMapsApiKey();
-                return View(model);
-            }
-
-            await using var transaction = await _context.Database.BeginTransactionAsync();
-
             try
             {
+                var hasActiveUserWithSameEmail = await _context.Users
+                    .AnyAsync(u => u.Email == model.Email && !u.IsDeleted);
+
+                if (hasActiveUserWithSameEmail)
+                {
+                    ModelState.AddModelError("", "Bu email adresi ile zaten aktif bir hesap var. Lütfen giriş yapın veya şifremi unuttum adımını kullanın.");
+                    SetGoogleMapsApiKey();
+                    return View(model);
+                }
+
                 _context.Users.Add(user);
                 await _context.SaveChangesAsync();
-                await SendConfirmationEmailAsync(user);
-                await transaction.CommitAsync();
+            }
+            catch (DbUpdateException ex) when (IsDuplicateActiveUserEmailError(ex))
+            {
+                ModelState.AddModelError("", "Bu email adresi ile zaten aktif bir hesap var. Lütfen farklı bir email kullanın veya giriş yapın.");
+                SetGoogleMapsApiKey();
+                return View(model);
             }
             catch
             {
-                await transaction.RollbackAsync();
-                ModelState.AddModelError("", "Kayıt sırasında bir hata oluştu. Lütfen tekrar deneyin.");
+                ModelState.AddModelError("", "Kayıt işlemi tamamlanamadı: beklenmeyen bir sistem hatası oluştu. Lütfen tekrar deneyin.");
                 SetGoogleMapsApiKey();
                 return View(model);
             }
 
-            TempData["AuthMessage"] = "Kayıt tamamlandı. Giriş yapmadan önce email adresinizi doğrulayın.";
+            var authMessage = "Kayıt tamamlandı. Giriş yapmadan önce email adresinizi doğrulayın.";
+
+            if (_emailSender is NullEmailSender)
+            {
+                authMessage = "Kayıt tamamlandı ancak doğrulama maili gönderilemedi. Lütfen daha sonra tekrar deneyin veya destek ile iletişime geçin.";
+            }
+            else
+            {
+                try
+                {
+                    await SendConfirmationEmailAsync(user);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Kayıt sonrası doğrulama maili gönderilemedi. UserId: {UserId}", user.Id);
+                    authMessage = "Kayıt tamamlandı ancak doğrulama maili gönderilemedi. Lütfen daha sonra tekrar deneyin veya destek ile iletişime geçin.";
+                }
+            }
+
+            TempData["AuthMessage"] = authMessage;
             return RedirectToAction("Login");
         }
 
@@ -319,6 +347,23 @@ namespace PharmacyJobPlatform.Web.Controllers
             {
                 ModelState.Remove(key);
             }
+        }
+
+        private static bool IsDuplicateActiveUserEmailError(DbUpdateException ex)
+        {
+            var currentException = ex.InnerException;
+
+            while (currentException != null)
+            {
+                if (currentException is SqlException sqlException)
+                {
+                    return sqlException.Number is 2601 or 2627;
+                }
+
+                currentException = currentException.InnerException;
+            }
+
+            return false;
         }
 
         public async Task<IActionResult> Logout()

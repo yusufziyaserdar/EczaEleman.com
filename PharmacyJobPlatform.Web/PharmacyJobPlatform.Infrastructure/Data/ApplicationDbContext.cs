@@ -11,7 +11,7 @@ namespace PharmacyJobPlatform.Infrastructure.Data
         public DbSet<User> Users { get; set; }
         public DbSet<Role> Roles { get; set; }
 
-        public DbSet<Address> Addresses { get; set; } // ✅ EKLENDİ
+        public DbSet<Address> Addresses { get; set; }
 
         public DbSet<JobPost> JobPosts { get; set; }
         public DbSet<JobApplication> JobApplications { get; set; }
@@ -32,6 +32,11 @@ namespace PharmacyJobPlatform.Infrastructure.Data
                 .WithMany(a => a.Users)
                 .HasForeignKey(u => u.AddressId)
                 .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<User>()
+                .HasIndex(u => u.Email)
+                .HasFilter("[IsDeleted] = 0")
+                .IsUnique();
 
             modelBuilder.Entity<JobPost>()
                 .HasOne(j => j.Address)

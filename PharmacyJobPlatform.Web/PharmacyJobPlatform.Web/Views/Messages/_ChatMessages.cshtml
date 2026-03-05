@@ -18,7 +18,7 @@
     </div>
 
     <div id="widgetMessagesInner">
-        @foreach (var msg in Model.Messages.Where(m => m.SenderId == userId ? !m.DeletedBySender : !m.DeletedByReceiver).OrderBy(m => m.SentAt))
+        @foreach (var msg in Model.Messages.Where(m => !m.IsSupportMessage && (m.SenderId == userId ? !m.DeletedBySender : !m.DeletedByReceiver)).OrderBy(m => m.SentAt))
         {
             bool mine = msg.SenderId == userId;
             <div class="chat-bubble-row @(mine ? "mine" : "")">

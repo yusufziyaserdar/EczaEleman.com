@@ -118,7 +118,7 @@ namespace PharmacyJobPlatform.Web.Controllers
                 return Unauthorized();
 
             foreach (var msg in conv.Messages
-                .Where(m => m.SenderId != userId && !m.IsRead))
+                .Where(m => !m.IsSupportMessage && m.SenderId != userId && !m.IsRead))
             {
                 msg.IsRead = true;
             }
@@ -287,14 +287,16 @@ namespace PharmacyJobPlatform.Web.Controllers
                         : c.User1.FirstName + " " + c.User1.LastName,
 
                     LastMessage = c.Messages
-                        .Where(m => (m.SenderId == userId ? !m.DeletedBySender : !m.DeletedByReceiver))
+                        .Where(m => !m.IsSupportMessage && (m.SenderId == userId ? !m.DeletedBySender : !m.DeletedByReceiver))
                         .OrderByDescending(m => m.SentAt)
                         .Select(m => m.IsRecalled ? "Bu mesaj karşı taraf tarafından geri alındı." : m.Content)
                         .FirstOrDefault(),
 
                     UnreadCount = c.Messages.Count(m =>
+                        !m.IsSupportMessage &&
                         (m.SenderId == userId ? !m.DeletedBySender : !m.DeletedByReceiver) && !m.IsRead && m.SenderId != userId)
                 })
+                .Where(c => c.LastMessage != null)
                 .ToList();
 
             return Json(data);
@@ -319,7 +321,7 @@ namespace PharmacyJobPlatform.Web.Controllers
                 return Unauthorized();
 
             foreach (var msg in conv.Messages
-                .Where(m => (m.SenderId == userId ? !m.DeletedBySender : !m.DeletedByReceiver) && !m.IsRead && m.SenderId != userId))
+                .Where(m => !m.IsSupportMessage && (m.SenderId == userId ? !m.DeletedBySender : !m.DeletedByReceiver) && !m.IsRead && m.SenderId != userId))
             {
                 msg.IsRead = true;
             }
@@ -460,7 +462,7 @@ namespace PharmacyJobPlatform.Web.Controllers
                 return Unauthorized();
 
             foreach (var msg in conv.Messages
-                .Where(m => (m.SenderId == userId ? !m.DeletedBySender : !m.DeletedByReceiver) && !m.IsRead && m.SenderId != userId))
+                .Where(m => !m.IsSupportMessage && (m.SenderId == userId ? !m.DeletedBySender : !m.DeletedByReceiver) && !m.IsRead && m.SenderId != userId))
             {
                 msg.IsRead = true;
             }
@@ -504,6 +506,7 @@ namespace PharmacyJobPlatform.Web.Controllers
             int userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
 
             int unreadCount = _context.Messages.Count(m =>
+                !m.IsSupportMessage &&
                 (m.SenderId == userId ? !m.DeletedBySender : !m.DeletedByReceiver) &&
                 !m.IsRead &&
                 m.SenderId != userId &&
@@ -584,21 +587,23 @@ namespace PharmacyJobPlatform.Web.Controllers
                         : c.User1.FirstName + " " + c.User1.LastName,
 
                     LastMessage = c.Messages
-                        .Where(m => (m.SenderId == userId ? !m.DeletedBySender : !m.DeletedByReceiver))
+                        .Where(m => !m.IsSupportMessage && (m.SenderId == userId ? !m.DeletedBySender : !m.DeletedByReceiver))
                         .OrderByDescending(m => m.SentAt)
                         .Select(m => m.IsRecalled ? "Bu mesaj karşı taraf tarafından geri alındı." : m.Content)
                         .FirstOrDefault(),
 
                     LastMessageTime = c.Messages
-                        .Where(m => (m.SenderId == userId ? !m.DeletedBySender : !m.DeletedByReceiver))
+                        .Where(m => !m.IsSupportMessage && (m.SenderId == userId ? !m.DeletedBySender : !m.DeletedByReceiver))
                         .OrderByDescending(m => m.SentAt)
                         .Select(m => (DateTime?)m.SentAt)
                         .FirstOrDefault(),
 
                     UnreadCount = c.Messages.Count(m =>
+                        !m.IsSupportMessage &&
                         (m.SenderId == userId ? !m.DeletedBySender : !m.DeletedByReceiver) &&
                         !m.IsRead && m.SenderId != userId)
                 })
+                .Where(x => x.LastMessageTime.HasValue)
                 .OrderByDescending(x => x.LastMessageTime)
                 .ToList();
         }

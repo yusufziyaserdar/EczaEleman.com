@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PharmacyJobPlatform.Domain.Entities;
@@ -315,6 +317,11 @@ namespace PharmacyJobPlatform.Web.Controllers
 
                 foreach (var exp in model.WorkExperiences)
                 {
+                    if (string.IsNullOrWhiteSpace(exp.PharmacyName) || exp.StartDate == default)
+                    {
+                        continue;
+                    }
+
                     user.WorkExperiences.Add(new WorkExperience
                     {
                         PharmacyName = exp.PharmacyName,
@@ -565,6 +572,107 @@ namespace PharmacyJobPlatform.Web.Controllers
             return RedirectToAction("Index", "Jobs");
         }
 
+        [Authorize]
+        [HttpPost("DeleteMyAccount")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteMyAccount()
+        {
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+            var user = await _context.Users
+                .Include(u => u.Role)
+                .FirstOrDefaultAsync(u => u.Id == userId && !u.IsDeleted);
+
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            if (user.Role?.Name == "Admin")
+            {
+                TempData["Error"] = "Admin hesabı bu ekrandan silinemez.";
+                return RedirectToAction("Edit");
+            }
+
+            await using var transaction = await _context.Database.BeginTransactionAsync();
+
+            var profileImagePath = user.ProfileImagePath;
+            var cvFilePath = user.CvFilePath;
+            var addressId = user.AddressId;
+
+            var reports = await _context.Reports
+                .Where(r => r.ReporterUserId == userId
+                         || r.ReviewedByAdminId == userId
+                         || (r.EntityType == "User" && r.EntityId == userId))
+                .ToListAsync();
+            _context.Reports.RemoveRange(reports);
+
+            var ratings = await _context.UserRatings
+                .Where(r => r.RaterId == userId || r.RatedUserId == userId)
+                .ToListAsync();
+            _context.UserRatings.RemoveRange(ratings);
+
+            var allComments = await _context.ProfileComments
+                .Select(c => new { c.Id, c.ParentCommentId, c.ProfileUserId, c.AuthorUserId })
+                .ToListAsync();
+
+            var commentIdsToDelete = GetCommentTreeIds(
+                allComments
+                    .Where(c => c.ProfileUserId == userId || c.AuthorUserId == userId)
+                    .Select(c => c.Id)
+                    .ToList(),
+                allComments.Select(c => (c.Id, c.ParentCommentId)).ToList());
+
+            var comments = await _context.ProfileComments
+                .Where(c => commentIdsToDelete.Contains(c.Id))
+                .ToListAsync();
+            _context.ProfileComments.RemoveRange(comments);
+
+            var conversationRequests = await _context.ConversationRequests
+                .Where(cr => cr.FromUserId == userId || cr.ToUserId == userId)
+                .ToListAsync();
+            _context.ConversationRequests.RemoveRange(conversationRequests);
+
+            var conversations = await _context.Conversations
+                .Where(c => c.User1Id == userId || c.User2Id == userId)
+                .ToListAsync();
+            _context.Conversations.RemoveRange(conversations);
+
+            var jobApplications = await _context.JobApplications
+                .Where(ja => ja.WorkerId == userId)
+                .ToListAsync();
+            _context.JobApplications.RemoveRange(jobApplications);
+
+            _context.Users.Remove(user);
+
+            await _context.SaveChangesAsync();
+
+            if (addressId.HasValue)
+            {
+                var hasAnyReference = await _context.Users.AnyAsync(u => u.AddressId == addressId.Value)
+                    || await _context.JobPosts.AnyAsync(j => j.AddressId == addressId.Value);
+
+                if (!hasAnyReference)
+                {
+                    var address = await _context.Addresses.FindAsync(addressId.Value);
+                    if (address != null)
+                    {
+                        _context.Addresses.Remove(address);
+                        await _context.SaveChangesAsync();
+                    }
+                }
+            }
+
+            await transaction.CommitAsync();
+
+            DeleteUserFile(profileImagePath);
+            DeleteUserFile(cvFilePath);
+
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            return RedirectToAction("Login", "Auth");
+        }
+
+
         private List<ProfileCommentItemViewModel> GetProfileComments(int profileUserId)
         {
             var comments = _context.ProfileComments
@@ -611,9 +719,13 @@ namespace PharmacyJobPlatform.Web.Controllers
 
         private static HashSet<int> GetCommentTreeIds(int rootId, List<(int Id, int? ParentCommentId)> allComments)
         {
-            var ids = new HashSet<int> { rootId };
-            var queue = new Queue<int>();
-            queue.Enqueue(rootId);
+            return GetCommentTreeIds(new List<int> { rootId }, allComments);
+        }
+
+        private static HashSet<int> GetCommentTreeIds(List<int> rootIds, List<(int Id, int? ParentCommentId)> allComments)
+        {
+            var ids = new HashSet<int>(rootIds);
+            var queue = new Queue<int>(rootIds);
 
             while (queue.Count > 0)
             {
@@ -633,6 +745,22 @@ namespace PharmacyJobPlatform.Web.Controllers
             }
 
             return ids;
+        }
+
+        private void DeleteUserFile(string? relativePath)
+        {
+            if (string.IsNullOrWhiteSpace(relativePath))
+            {
+                return;
+            }
+
+            var normalizedPath = relativePath.Replace('/', Path.DirectorySeparatorChar).TrimStart(Path.DirectorySeparatorChar);
+            var fullPath = Path.Combine(_environment.WebRootPath, normalizedPath);
+
+            if (System.IO.File.Exists(fullPath))
+            {
+                System.IO.File.Delete(fullPath);
+            }
         }
 
         private void RemoveModelStateByPrefix(string prefix)

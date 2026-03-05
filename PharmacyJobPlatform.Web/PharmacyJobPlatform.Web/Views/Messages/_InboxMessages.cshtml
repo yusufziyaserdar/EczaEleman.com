@@ -29,7 +29,7 @@
 </div>
 
 <div class="messages-thread-body" id="messagesThreadBody">
-    @foreach (var msg in Model.Messages.Where(IsVisible).OrderBy(m => m.SentAt))
+    @foreach (var msg in Model.Messages.Where(m => !m.IsSupportMessage).Where(IsVisible).OrderBy(m => m.SentAt))
     {
         bool mine = msg.SenderId == userId;
         var reportModalId = $"reportMessageModal-{msg.Id}";

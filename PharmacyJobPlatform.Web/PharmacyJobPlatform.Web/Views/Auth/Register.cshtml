@@ -21,6 +21,21 @@
                       method="post"
                       enctype="multipart/form-data">
 
+                    @if (!ViewData.ModelState.IsValid && ViewData.ModelState.ErrorCount > 0)
+                    {
+                        var firstError = ViewData.ModelState.Values
+                            .SelectMany(v => v.Errors)
+                            .Select(e => e.ErrorMessage)
+                            .FirstOrDefault(message => !string.IsNullOrWhiteSpace(message));
+
+                        if (!string.IsNullOrWhiteSpace(firstError))
+                        {
+                            <div class="alert alert-warning" role="alert">
+                                <strong>Kayıt işlemi tamamlanamadı.</strong> @firstError
+                            </div>
+                        }
+                    }
+
                     <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
                     <!-- ROLE -->
@@ -140,8 +155,13 @@
                                         </div>
                                         <div class="col-md-6">
                                             <label>Bitiş</label>
-                                            <input name="WorkExperiences[0].EndDate" type="date" class="form-control" />
+                                            <input name="WorkExperiences[0].EndDate" type="date" class="form-control end-date-input" />
                                         </div>
+                                    </div>
+
+                                    <div class="form-check mt-2">
+                                        <input type="checkbox" class="form-check-input currently-working-toggle" id="isCurrentWork-0" />
+                                        <label class="form-check-label" for="isCurrentWork-0">Hala çalışmaya devam ediyorum</label>
                                     </div>
 
                                     <button type="button"
@@ -257,7 +277,7 @@
                         </div>
                     </div>
 
-                    <button type="submit" class="btn btn-success w-100 mt-4">
+                    <button type="submit" id="registerSubmitButton" class="btn btn-success w-100 mt-4">
                         <i class="fa-solid fa-check"></i> Kayıt Ol
                     </button>
                 </form>
@@ -328,12 +348,50 @@
                 const items = experienceList.querySelectorAll(".experience-item");
                 items.forEach((item, index) => {
                     item.querySelectorAll("input").forEach(input => {
-                        input.name = input.name.replace(/\[\d+\]/, `[${index}]`);
+                        if (input.name) {
+                            input.name = input.name.replace(/\[\d+\]/, `[${index}]`);
+                        }
                     });
+
+                    const toggle = item.querySelector(".currently-working-toggle");
+                    if (toggle) {
+                        const toggleId = `isCurrentWork-${index}`;
+                        toggle.id = toggleId;
+                        item.querySelector("label[for^='isCurrentWork-']")?.setAttribute("for", toggleId);
+                    }
                 });
 
                 experienceIndex = items.length;
             };
+
+            const syncEndDateState = (experienceItem, shouldClearEndDate) => {
+                const toggle = experienceItem.querySelector(".currently-working-toggle");
+                const endDateInput = experienceItem.querySelector(".end-date-input");
+                if (!toggle || !endDateInput) {
+                    return;
+                }
+
+                if (toggle.checked && shouldClearEndDate) {
+                    endDateInput.value = "";
+                }
+
+                endDateInput.disabled = toggle.checked;
+            };
+
+            const wireExperienceItem = (experienceItem, shouldClearEndDate = true) => {
+                const toggle = experienceItem.querySelector(".currently-working-toggle");
+                if (!toggle) {
+                    return;
+                }
+
+                toggle.addEventListener("change", () => {
+                    syncEndDateState(experienceItem, true);
+                });
+
+                syncEndDateState(experienceItem, shouldClearEndDate);
+            };
+
+            experienceList?.querySelectorAll(".experience-item").forEach(item => wireExperienceItem(item, false));
 
             if (addExperienceButton && experienceList) {
                 addExperienceButton.addEventListener("click", () => {
@@ -354,12 +412,19 @@
                                                name="WorkExperiences[${experienceIndex}].StartDate" />
                                     </div>
 
-                                    <div class="col-md-6">
-                                        <label>Bitiş</label>
-                                        <input type="date"
-                                               class="form-control"
+                                        <div class="col-md-6">
+                                            <label>Bitiş</label>
+                                            <input type="date"
+                                               class="form-control end-date-input"
                                                name="WorkExperiences[${experienceIndex}].EndDate" />
                                     </div>
+                                </div>
+
+                                <div class="form-check mt-2">
+                                    <input type="checkbox"
+                                           class="form-check-input currently-working-toggle"
+                                           id="isCurrentWork-${experienceIndex}" />
+                                    <label class="form-check-label" for="isCurrentWork-${experienceIndex}">Hala çalışmaya devam ediyorum</label>
                                 </div>
 
                                 <button type="button"
@@ -370,6 +435,7 @@
                         </div>`;
 
                     experienceList.insertAdjacentHTML("beforeend", html);
+                    wireExperienceItem(experienceList.lastElementChild);
                     experienceIndex++;
                     applyRoleView();
                 });
@@ -389,6 +455,8 @@
             const passwordToggle = document.getElementById("registerPasswordToggle");
             const passwordRules = document.getElementById("passwordRules");
             const phoneInput = document.getElementById("PhoneNumber");
+            const registerForm = document.querySelector('form[asp-action="Register"], form[action$="/Auth/Register"]');
+            const registerSubmitButton = document.getElementById("registerSubmitButton");
 
             if (passwordInput && passwordToggle) {
                 passwordInput.addEventListener("focus", () => {
@@ -476,6 +544,13 @@
             if (phoneInput) {
                 phoneInput.addEventListener("input", () => {
                     phoneInput.value = phoneInput.value.replace(/\D/g, "").slice(0, 10);
+                });
+            }
+
+            if (registerForm && registerSubmitButton) {
+                registerForm.addEventListener("submit", () => {
+                    registerSubmitButton.disabled = true;
+                    registerSubmitButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Kayıt oluşturuluyor...';
                 });
             }
 

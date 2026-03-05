@@ -8,7 +8,7 @@ namespace PharmacyJobPlatform.Domain.Entities
         public int Id { get; set; }
 
         [Required, MaxLength(30)]
-        public string EntityType { get; set; } = null!; // JobPost, User, Comment, Message
+        public string EntityType { get; set; } = null!;
 
         public int EntityId { get; set; }
 

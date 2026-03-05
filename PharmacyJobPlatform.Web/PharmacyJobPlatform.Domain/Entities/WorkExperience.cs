@@ -16,7 +16,7 @@ namespace PharmacyJobPlatform.Domain.Entities
         public string PharmacyName { get; set; }
 
         public DateTime StartDate { get; set; }
-        public DateTime? EndDate { get; set; } // hâlâ çalışıyorsa null
+        public DateTime? EndDate { get; set; }
     }
 
 }
