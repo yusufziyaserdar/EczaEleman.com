@@ -1,12 +1,21 @@
 using System.Text;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using PharmacyJobPlatform.Infrastructure.Data;
 
 namespace PharmacyJobPlatform.Web.Controllers
 {
     [AllowAnonymous]
     public class SeoController : Controller
     {
+        private readonly ApplicationDbContext _context;
+
+        public SeoController(ApplicationDbContext context)
+        {
+            _context = context;
+        }
+
         [HttpGet("robots.txt")]
         public IActionResult Robots()
         {
@@ -19,7 +28,6 @@ namespace PharmacyJobPlatform.Web.Controllers
                 string.Empty,
                 "Disallow: /Admin",
                 "Disallow: /Messages",
-                "Disallow: /Support",
                 "Disallow: /WorkerDashboard",
                 "Disallow: /PharmacyDashboard",
                 "Disallow: /PharmacyApplications",
@@ -28,7 +36,6 @@ namespace PharmacyJobPlatform.Web.Controllers
                 "Disallow: /Conversations",
                 "Disallow: /Reports",
                 "Disallow: /Profile",
-                "Disallow: /Auth/Login",
                 "Disallow: /Auth/Logout",
                 "Disallow: /Auth/ConfirmEmail",
                 string.Empty,
@@ -39,7 +46,7 @@ namespace PharmacyJobPlatform.Web.Controllers
         }
 
         [HttpGet("sitemap.xml")]
-        public IActionResult Sitemap()
+        public async Task<IActionResult> Sitemap()
         {
             var baseUrl = $"{Request.Scheme}://{Request.Host}";
             var today = DateTime.UtcNow.Date;
@@ -47,9 +54,19 @@ namespace PharmacyJobPlatform.Web.Controllers
             var urls = new List<SitemapUrl>
             {
                 new($"{baseUrl}/", today, "daily", "1.0"),
-                new($"{baseUrl}/Home/Privacy", today, "monthly", "0.3"),
-                new($"{baseUrl}/Auth/Register", today, "weekly", "0.8")
+                new($"{baseUrl}/Auth/Login", today, "weekly", "0.6"),
+                new($"{baseUrl}/Auth/Register", today, "weekly", "0.8"),
+                new($"{baseUrl}/Jobs", today, "daily", "0.9")
             };
+
+            var activeJobs = await _context.JobPosts
+                .AsNoTracking()
+                .Where(x => x.IsActive && !x.IsDeleted)
+                .Select(x => x.Id)
+                .ToListAsync();
+
+            urls.AddRange(activeJobs.Select(jobId =>
+                new SitemapUrl($"{baseUrl}/Jobs/Details/{jobId}", today, "daily", "0.8")));
 
             var sb = new StringBuilder();
             sb.AppendLine("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");

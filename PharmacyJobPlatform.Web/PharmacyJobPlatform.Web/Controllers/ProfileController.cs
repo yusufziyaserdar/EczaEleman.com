@@ -29,6 +29,12 @@ namespace PharmacyJobPlatform.Web.Controllers
         [HttpGet("{id}")]
         public IActionResult Index(int id)
         {
+            if (User.Identity?.IsAuthenticated != true)
+            {
+                TempData["Error"] = "Profilleri görüntülemek için giriş yapmalısınız.";
+                return RedirectToAction("Login", "Auth", new { returnUrl = Url.Action("Index", "Profile", new { id }) });
+            }
+
             var user = _context.Users
                 .Include(u => u.Role)
                 .Include(u => u.WorkExperiences)

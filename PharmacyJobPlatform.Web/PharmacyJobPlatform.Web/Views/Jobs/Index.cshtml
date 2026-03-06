@@ -122,13 +122,25 @@
                         }
                         else
                         {
-                            <form asp-action="Apply" method="post" class="position-relative">
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" name="jobPostId" value="@job.Id" />
-                                <button class="btn btn-success w-100">
-                                    Başvur
-                                </button>
-                            </form>
+                            @if (User.Identity?.IsAuthenticated == true)
+                            {
+                                <form asp-action="Apply" method="post" class="position-relative">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="jobPostId" value="@job.Id" />
+                                    <button class="btn btn-success w-100">
+                                        Başvur
+                                    </button>
+                                </form>
+                            }
+                            else
+                            {
+                                <a class="btn btn-outline-primary w-100"
+                                   asp-controller="Auth"
+                                   asp-action="Login"
+                                   asp-route-returnUrl="@Url.Action("Details", "Jobs", new { id = job.Id })">
+                                    Başvuru için giriş yap
+                                </a>
+                            }
                         }
                     </div>
                 </div>

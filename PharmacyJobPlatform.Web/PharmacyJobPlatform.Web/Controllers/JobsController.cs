@@ -9,7 +9,7 @@ using System.Security.Claims;
 
 namespace PharmacyJobPlatform.Web.Controllers
 {
-    [Authorize(Roles = "Worker,Admin")]
+    [AllowAnonymous]
     public class JobsController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -21,7 +21,11 @@ namespace PharmacyJobPlatform.Web.Controllers
 
         public IActionResult Index(JobPostFilterViewModel filter)
         {
-            var workerId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+            int? workerId = null;
+            if (User.Identity?.IsAuthenticated == true)
+            {
+                workerId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+            }
 
             var baseQuery = _context.JobPosts
                 .Where(x => x.IsActive)
@@ -107,7 +111,7 @@ namespace PharmacyJobPlatform.Web.Controllers
                     DailyWage = x.DailyWage,
                     MonthlySalary = x.MonthlySalary,
                     AlreadyApplied = _context.JobApplications
-                        .Any(a => a.JobPostId == x.Id && a.WorkerId == workerId)
+                        .Any(a => a.JobPostId == x.Id && workerId.HasValue && a.WorkerId == workerId.Value)
                 })
 
                 .ToList();
@@ -117,7 +121,11 @@ namespace PharmacyJobPlatform.Web.Controllers
 
         public IActionResult Details(int id)
         {
-            var workerId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+            int? workerId = null;
+            if (User.Identity?.IsAuthenticated == true)
+            {
+                workerId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+            }
 
             var post = _context.JobPosts
                 .Include(x => x.Address)
@@ -143,7 +151,7 @@ namespace PharmacyJobPlatform.Web.Controllers
                     BuildingNumber = x.Address.BuildingNumber,
                     AddressDescription = x.Address.Description,
                     AlreadyApplied = _context.JobApplications
-                        .Any(a => a.JobPostId == x.Id && a.WorkerId == workerId)
+                        .Any(a => a.JobPostId == x.Id && workerId.HasValue && a.WorkerId == workerId.Value)
                 })
                 .FirstOrDefault();
 
@@ -176,15 +184,10 @@ namespace PharmacyJobPlatform.Web.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Worker")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Apply(int jobPostId)
         {
-            if (User.IsInRole("Admin"))
-            {
-                TempData["Error"] = "Admin hesabı ile başvuru yapılamaz.";
-                return RedirectToAction(nameof(Index));
-            }
-
             var workerId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
 
             var exists = _context.JobApplications

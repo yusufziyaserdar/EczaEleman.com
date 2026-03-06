@@ -4,6 +4,11 @@ namespace PharmacyJobPlatform.Web.Models.Support
 {
     public class SupportMessageCreateViewModel
     {
+        [Display(Name = "E-posta")]
+        [EmailAddress(ErrorMessage = "Geçerli bir e-posta adresi giriniz.")]
+        public string? Email { get; set; }
+
+
         [Display(Name = "Konu")]
         [Required(ErrorMessage = "Mesaj başlığı zorunludur.")]
         [StringLength(100, ErrorMessage = "Mesaj başlığı en fazla 100 karakter olabilir.")]

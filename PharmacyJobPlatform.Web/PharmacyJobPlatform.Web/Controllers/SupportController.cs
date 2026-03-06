@@ -8,9 +8,10 @@ using System.Security.Claims;
 
 namespace PharmacyJobPlatform.Web.Controllers
 {
-    [Authorize]
+    [AllowAnonymous]
     public class SupportController : Controller
     {
+        private const string SystemUserEmail = "system@pharmacyjobplatform.local";
         private readonly ApplicationDbContext _context;
 
         public SupportController(ApplicationDbContext context)
@@ -21,19 +22,44 @@ namespace PharmacyJobPlatform.Web.Controllers
         [HttpGet]
         public IActionResult Index()
         {
-            return View(new SupportMessageCreateViewModel());
+            return View(new SupportMessageCreateViewModel
+            {
+                Email = User.Identity?.IsAuthenticated == true ? User.Identity.Name ?? string.Empty : string.Empty
+            });
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Index(SupportMessageCreateViewModel model)
         {
+            var isAuthenticated = User.Identity?.IsAuthenticated == true;
+            var effectiveEmail = isAuthenticated
+                ? User.FindFirstValue(ClaimTypes.Email) ?? User.Identity?.Name ?? string.Empty
+                : model.Email?.Trim() ?? string.Empty;
+
+            if (!isAuthenticated && string.IsNullOrWhiteSpace(effectiveEmail))
+            {
+                ModelState.AddModelError(nameof(model.Email), "E-posta adresi zorunludur.");
+            }
+
             if (!ModelState.IsValid)
             {
                 return View(model);
             }
 
-            var senderId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var senderId = await _context.Users
+                .AsNoTracking()
+                .Where(u => u.Email == SystemUserEmail && !u.IsDeleted)
+                .Select(u => u.Id)
+                .FirstOrDefaultAsync();
+
+            if (senderId == 0)
+            {
+                TempData["Error"] = "Sistem hesabı bulunamadı. Lütfen daha sonra tekrar deneyin.";
+                return RedirectToAction(nameof(Index));
+            }
+
+
             var adminUserId = await _context.Users
                 .AsNoTracking()
                 .Where(u => u.Role.Name == "Admin" && !u.IsDeleted)
@@ -68,7 +94,7 @@ namespace PharmacyJobPlatform.Web.Controllers
                 await _context.SaveChangesAsync();
             }
 
-            var supportMessage = $"[DESTEK] {model.Subject.Trim()}\n\n{model.Content.Trim()}";
+            var supportMessage = $"[DESTEK] {model.Subject.Trim()}\n[E-POSTA] {effectiveEmail}\n\n{model.Content.Trim()}";
 
             _context.Messages.Add(new Message
             {
