@@ -136,3 +136,41 @@
         </div>
     </div>
 </div>
+
+<script type="application/ld+json">
+    {
+      "@@context": "https://schema.org",
+      "@@type": "JobPosting",
+      "title": "@Model.Title",
+      "description": "@Model.Description",
+      "datePosted": "@DateTime.UtcNow.ToString("yyyy-MM-dd")",
+      "validThrough": "@DateTime.UtcNow.AddDays(30).ToString("yyyy-MM-dd")",
+      "employmentType": "@(Model.JobType == JobType.Permanent ? "FULL_TIME" : "TEMPORARY")",
+      "hiringOrganization": {
+        "@@type": "Organization",
+        "name": "@Model.PharmacyName",
+        "sameAs": "https://www.eczaeleman.com"
+      },
+      "jobLocation": {
+        "@@type": "Place",
+        "address": {
+          "@@type": "PostalAddress",
+          "streetAddress": "@Model.Street @Model.BuildingNumber",
+          "addressLocality": "@Model.District",
+          "addressRegion": "@Model.City",
+          "addressCountry": "TR"
+        }
+      },
+      "baseSalary": {
+        "@@type": "MonetaryAmount",
+        "currency": "TRY",
+        "value": {
+          "@@type": "QuantitativeValue",
+          "value": "@(Model.JobType == JobType.Daily ? Model.DailyWage : Model.MonthlySalary)",
+          "unitText": "@(Model.JobType == JobType.Daily ? "DAY" : "MONTH")"
+        }
+      },
+      "directApply": true,
+      "url": "https://www.eczaeleman.com/Jobs/Details/@Model.Id"
+    }
+</script>
