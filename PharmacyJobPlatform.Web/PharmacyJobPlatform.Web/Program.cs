@@ -10,6 +10,10 @@ var builder = WebApplication.CreateBuilder(args);
 
 
 builder.Services.AddControllersWithViews();
+builder.Services.AddRouting(options =>
+{
+    options.LowercaseUrls = true;
+});
 
 builder.Services.AddSignalR();
 builder.Services.AddSingleton<IUserIdProvider, NameIdentifierUserIdProvider>();
@@ -53,6 +57,27 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.Use(async (context, next) =>
+{
+    var request = context.Request;
+    var host = request.Host.Host;
+    var hasWwwPrefix = host.StartsWith("www.", StringComparison.OrdinalIgnoreCase);
+    var hasTrailingSlash = request.Path.HasValue && request.Path.Value != "/" && request.Path.Value!.EndsWith('/');
+
+    if (hasWwwPrefix || hasTrailingSlash)
+    {
+        var targetHost = hasWwwPrefix ? host[4..] : host;
+        var targetPath = hasTrailingSlash ? request.Path.Value!.TrimEnd('/') : request.Path.Value;
+        var destination = $"https://{targetHost}{targetPath}{request.QueryString}";
+
+        context.Response.Redirect(destination, permanent: true);
+        return;
+    }
+
+    await next();
+});
+
 app.UseStaticFiles();
 
 var uploadPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads");

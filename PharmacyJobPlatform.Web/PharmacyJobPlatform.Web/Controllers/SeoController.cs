@@ -54,9 +54,7 @@ namespace PharmacyJobPlatform.Web.Controllers
             var urls = new List<SitemapUrl>
             {
                 new($"{baseUrl}/", today, "daily", "1.0"),
-                new($"{baseUrl}/Auth/Login", today, "weekly", "0.6"),
-                new($"{baseUrl}/Auth/Register", today, "weekly", "0.8"),
-                new($"{baseUrl}/Jobs", today, "daily", "0.9")
+                new($"{baseUrl}/jobs", today, "daily", "0.9")
             };
 
             var activeJobs = await _context.JobPosts
@@ -66,7 +64,7 @@ namespace PharmacyJobPlatform.Web.Controllers
                 .ToListAsync();
 
             urls.AddRange(activeJobs.Select(jobId =>
-                new SitemapUrl($"{baseUrl}/Jobs/Details/{jobId}", today, "daily", "0.8")));
+                new SitemapUrl($"{baseUrl}/jobs/details/{jobId}", today, "daily", "0.8")));
 
             var sb = new StringBuilder();
             sb.AppendLine("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
