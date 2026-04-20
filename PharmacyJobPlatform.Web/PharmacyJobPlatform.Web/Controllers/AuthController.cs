@@ -95,7 +95,6 @@ namespace PharmacyJobPlatform.Web.Controllers
 
         public IActionResult Register()
         {
-            SetNoIndex();
             SetGoogleMapsApiKey();
             return View(new RegisterViewModel());
         }
@@ -118,7 +117,6 @@ namespace PharmacyJobPlatform.Web.Controllers
 
             if (!ModelState.IsValid)
             {
-                SetNoIndex();
                 SetGoogleMapsApiKey();
                 return View(model);
             }
@@ -126,7 +124,6 @@ namespace PharmacyJobPlatform.Web.Controllers
             if (_context.Users.Any(u => u.Email == model.Email && !u.IsDeleted))
             {
                 ModelState.AddModelError("", "Bu email zaten kayıtlı");
-                SetNoIndex();
                 SetGoogleMapsApiKey();
                 return View(model);
             }
@@ -137,7 +134,6 @@ namespace PharmacyJobPlatform.Web.Controllers
             if (role == null)
             {
                 ModelState.AddModelError("", "Geçersiz rol seçimi");
-                SetNoIndex();
                 SetGoogleMapsApiKey();
                 return View(model);
             }
@@ -186,7 +182,6 @@ namespace PharmacyJobPlatform.Web.Controllers
                 if (model.Address == null)
                 {
                     ModelState.AddModelError("", "Eczane sahibi için adres bilgisi zorunludur");
-                    SetNoIndex();
                     SetGoogleMapsApiKey();
                     return View(model);
                 }
@@ -204,7 +199,6 @@ namespace PharmacyJobPlatform.Web.Controllers
 
             if (!ModelState.IsValid)
             {
-                SetNoIndex();
                 SetGoogleMapsApiKey();
                 return View(model);
             }
@@ -266,7 +260,6 @@ namespace PharmacyJobPlatform.Web.Controllers
                 if (hasActiveUserWithSameEmail)
                 {
                     ModelState.AddModelError("", "Bu email adresi ile zaten aktif bir hesap var. Lütfen giriş yapın veya şifremi unuttum adımını kullanın.");
-                    SetNoIndex();
                     SetGoogleMapsApiKey();
                     return View(model);
                 }
@@ -277,14 +270,12 @@ namespace PharmacyJobPlatform.Web.Controllers
             catch (DbUpdateException ex) when (IsDuplicateActiveUserEmailError(ex))
             {
                 ModelState.AddModelError("", "Bu email adresi ile zaten aktif bir hesap var. Lütfen farklı bir email kullanın veya giriş yapın.");
-                SetNoIndex();
                 SetGoogleMapsApiKey();
                 return View(model);
             }
             catch
             {
                 ModelState.AddModelError("", "Kayıt işlemi tamamlanamadı: beklenmeyen bir sistem hatası oluştu. Lütfen tekrar deneyin.");
-                SetNoIndex();
                 SetGoogleMapsApiKey();
                 return View(model);
             }
